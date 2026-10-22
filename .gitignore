@@ -29,3 +29,18 @@ npm-debug.log*
 # OS
 .DS_Store
 Thumbs.db
+tests/fixtures/generated/
+
+# Personal recordings and generated test media (never commit)
+backend/storage/
+backend/tests/fixtures/generated/
+backend/tests/fixtures/real/
+*.webm
+*.wav
+*.mp4
+venv/
+venv-presence/
+venv-voice/
+.env
+__pycache__/
+*.pyc

@@ -17,6 +17,45 @@ const btnStyle = (active) => ({ padding: '8px 16px', borderRadius: '6px', border
 
 const cardStyle = { background: '#fff', borderRadius: '10px', padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', border: '1px solid #e8e8e8', transition: 'all 0.2s linear' };
 
+
+const STATUS_STYLE = {
+  scored: ['#00a86b', 'Scored'],
+  insufficient_signals: ['#ff9500', 'Insufficient'],
+  failed: ['#e53935', 'Failed'],
+  not_processed: ['#999', 'Not processed'],
+  in_progress: ['#0052cc', 'In progress'],
+  legacy: ['#999', 'Legacy'],
+};
+const statusBadge = s => {
+  const [c, l] = STATUS_STYLE[s] || ['#999', s || '—'];
+  return <span style={{ display: 'inline-block', marginTop: '4px', fontSize: '10px', fontWeight: '700', color: c, border: `1px solid ${c}`, borderRadius: '4px', padding: '1px 6px' }}>{l}</span>;
+};
+const clampOrNull = v => (v == null ? null : Math.min(100, Math.max(0, v)));
+const fmtNum = v => (v == null ? '—' : Math.round(v));
+const fmtPct = v => (v == null ? '—' : `${Math.round(v)}%`);
+const fmtSec = v => (v == null ? '—' : `${Number(v).toFixed(1)}s`);
+const fmtStars = v => (v == null ? '—' : `${Number(v).toFixed(1)}★`);
+const mapSummary = d => (d ? {
+  total_interactions: d.total_interactions,
+  insufficient_signal_count: d.insufficient_signal_count,
+  unified_score: d.avg_unified_score,
+  presence_rate: d.avg_presence,
+  emotion_score: d.avg_emotion,
+  voice_score: d.avg_voice,
+  avg_response: d.avg_response,
+  feedback: d.avg_feedback,
+} : { error: true });
+const mapInteraction = r => ({
+  ...r,
+  time: r.start_timestamp ? new Date(r.start_timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : null,
+  present: null, // no validated presence threshold yet
+  emotion: r.emotion_score,
+  voice: r.voice_score,
+  response: r.response_seconds,
+  feedback: null,
+  status: r.processing_status,
+});
+
 export default function EmployeeDashboard() {
   const navigate = useNavigate();
   const [summary, setSummary] = useState(null);
@@ -62,8 +101,8 @@ export default function EmployeeDashboard() {
       console.log('📊 Employee Summary:', summaryRes.data);
       console.log('📋 Employee Interactions:', interactionsRes.data);
       
-      setSummary(summaryRes.data);
-      setInteractions(interactionsRes.data || []);
+      setSummary(mapSummary(summaryRes.data));
+      setInteractions((Array.isArray(interactionsRes.data) ? interactionsRes.data : []).map(mapInteraction));
 
       const raw = trendRes.data || {};
       const names = Object.keys(raw);
@@ -149,16 +188,16 @@ export default function EmployeeDashboard() {
         {summary ? (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '12px' }}>
             <div className="card-hover" style={{ animation: 'fadeIn 0.3s ease-out' }}>
-              <KPICard label="Your Score" value={`${Math.round(summary.unified_score || 0)}`} sub="out of 100" color="#0052cc" />
+              <KPICard label="Your Score" value={`${fmtNum(summary.unified_score)}`} sub="out of 100" color="#0052cc" />
             </div>
             <div className="card-hover" style={{ animation: 'fadeIn 0.3s ease-out 0.05s both' }}>
-              <KPICard label="Presence Rate" value={`${Math.round(summary.presence_rate || 0)}%`} sub="target ≥ 90%" color="#00a86b" />
+              <KPICard label="Avg presence score" value={`${fmtNum(summary.presence_rate)}`} sub="average of measured presence scores" color="#00a86b" />
             </div>
             <div className="card-hover" style={{ animation: 'fadeIn 0.3s ease-out 0.1s both' }}>
-              <KPICard label="Avg Response" value={`${(summary.avg_response || 0).toFixed(1)}s`} sub="limit: 15s" color="#ff9500" />
+              <KPICard label="Avg Response" value={`${fmtSec(summary.avg_response)}`} sub="limit: 15s" color="#ff9500" />
             </div>
             <div className="card-hover" style={{ animation: 'fadeIn 0.3s ease-out 0.15s both' }}>
-              <KPICard label="Feedback" value={`${(summary.feedback || 0).toFixed(1)}★`} sub="out of 5" color="#9333ea" />
+              <KPICard label="Feedback" value={`${fmtStars(summary.feedback)}`} sub="out of 5" color="#9333ea" />
             </div>
           </div>
         ) : (
@@ -179,7 +218,7 @@ export default function EmployeeDashboard() {
                   <YAxis domain={[50, 100]} fontSize={11} stroke="#ddd" />
                   <Tooltip contentStyle={{ background: '#fff', border: '2px solid #0052cc', borderRadius: '6px', boxShadow: '0 2px 8px rgba(0,82,204,0.15)', padding: '8px 12px', fontSize: '12px' }} />
                   <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '12px', color: '#333' }} />
-                  <Line type="monotone" dataKey={employeeName} stroke="#0052cc" strokeWidth={2.5} dot={false} />
+                  <Line type="linear" dataKey={employeeName} stroke="#0052cc" strokeWidth={2.5} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             ) : (
@@ -195,7 +234,7 @@ export default function EmployeeDashboard() {
               <table style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse' }}>
                 <thead style={{ position: 'sticky', top: 0, background: '#e8f0ff', zIndex: 10 }}>
                   <tr style={{ borderBottom: '2px solid #0052cc' }}>
-                    {['Time', 'Present', 'Emotion', 'Voice', 'Response', 'Rating'].map(h => (
+                    {['Time', 'Presence score', 'Expression (exp.)', 'Voice (exp.)', 'Response', 'Rating'].map(h => (
                       <th key={h} style={{ textAlign: h === 'Time' ? 'left' : 'center', padding: '10px 8px', color: '#0052cc', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
                         {h}
                       </th>
@@ -212,10 +251,10 @@ export default function EmployeeDashboard() {
                         onMouseLeave={e => e.currentTarget.style.background = idx % 2 === 0 ? '#fafbfc' : '#fff'}
                       >
                         <td style={{ padding: '10px 8px', color: '#1a1a1a', fontWeight: '600' }}>{i.time || '—'}</td>
-                        <td style={{ padding: '10px 8px', textAlign: 'center', color: i.present ? '#00a86b' : '#e53935', fontWeight: '700', fontSize: '13px' }}>{i.present ? '✓' : '✗'}</td>
-                        <td style={{ padding: '10px 8px', textAlign: 'center', color: '#555', fontSize: '11px' }}>{i.emotion ? `${Math.round(i.emotion)}%` : '—'}</td>
-                        <td style={{ padding: '10px 8px', textAlign: 'center', color: voiceColor(i.voice), fontWeight: '600', fontSize: '11px' }}>{i.voice ? `${Math.round(i.voice)}%` : '—'}</td>
-                        <td style={{ padding: '10px 8px', textAlign: 'center', color: '#555', fontSize: '11px' }}>{i.response ? `${i.response}s` : '—'}</td>
+                        <td style={{ padding: '10px 8px', textAlign: 'center', color: '#1a1a1a', fontWeight: '700', fontSize: '13px' }}>{fmtNum(i.presence_score)}<br />{statusBadge(i.status)}</td>
+                        <td style={{ padding: '10px 8px', textAlign: 'center', color: '#555', fontSize: '11px' }}>{fmtPct(i.emotion)}</td>
+                        <td style={{ padding: '10px 8px', textAlign: 'center', color: voiceColor(i.voice), fontWeight: '600', fontSize: '11px' }}>{fmtPct(i.voice)}</td>
+                        <td style={{ padding: '10px 8px', textAlign: 'center', color: '#555', fontSize: '11px' }}>{fmtSec(i.response)}</td>
                         <td style={{ padding: '10px 8px', textAlign: 'center', color: '#555', fontSize: '11px' }}>{i.feedback ? `${i.feedback}★` : '—'}</td>
                       </tr>
                     ))
@@ -238,42 +277,42 @@ export default function EmployeeDashboard() {
               {[
                 { 
                   label: 'Presence', 
-                  value: Math.min(100, Math.max(0, summary.presence_rate || 0)), 
+                  value: clampOrNull(summary.presence_rate), 
                   color: '#00a86b',
                   desc: 'Face detection at counter'
                 },
                 { 
                   label: 'Emotion', 
-                  value: Math.min(100, Math.max(0, summary.emotion_score || 0)), 
+                  value: clampOrNull(summary.emotion_score), 
                   color: '#0052cc',
-                  desc: 'Positive emotion ratio'
+                  desc: 'Expression (experimental)'
                 },
                 { 
                   label: 'Response', 
-                  value: Math.min(100, Math.max(0, 100 - ((summary.avg_response || 15) / 15) * 100)), 
+                  value: clampOrNull(summary.avg_response == null ? null : 100 - (summary.avg_response / 15) * 100), 
                   color: '#ff9500',
                   desc: 'Speed (≤15s = 100%)'
                 },
                 { 
                   label: 'Feedback', 
-                  value: Math.min(100, Math.max(0, ((summary.feedback || 0) / 5) * 100)), 
+                  value: clampOrNull(summary.feedback == null ? null : (summary.feedback / 5) * 100), 
                   color: '#9333ea',
                   desc: 'Customer rating'
                 },
                 { 
                   label: 'Voice', 
-                  value: Math.min(100, Math.max(0, summary.voice_score || 0)), 
+                  value: clampOrNull(summary.voice_score), 
                   color: '#e53935',
-                  desc: 'Tone sentiment'
+                  desc: 'Speech presence (experimental)'
                 }
               ].map(s => (
                 <div key={s.label}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                     <span style={{ fontSize: '13px', color: '#333', fontWeight: '600' }}>{s.label}</span>
-                    <span style={{ fontSize: '13px', fontWeight: '700', color: s.color }}>{Math.round(s.value)}%</span>
+                    <span style={{ fontSize: '13px', fontWeight: '700', color: s.color }}>{s.value == null ? '—' : `${Math.round(s.value)}%`}</span>
                   </div>
                   <div style={{ width: '100%', background: '#f0f0f0', borderRadius: '6px', height: '10px', overflow: 'hidden', marginBottom: '6px' }}>
-                    <div style={{ width: `${s.value}%`, background: `linear-gradient(90deg, ${s.color}, ${s.color}dd)`, height: '10px', borderRadius: '6px', transition: 'width 0.5s ease-out' }} />
+                    <div style={{ width: `${s.value ?? 0}%`, background: `linear-gradient(90deg, ${s.color}, ${s.color}dd)`, height: '10px', borderRadius: '6px', transition: 'width 0.5s ease-out' }} />
                   </div>
                   <p style={{ fontSize: '10px', color: '#999', margin: '0', fontWeight: '500' }}>{s.desc}</p>
                 </div>

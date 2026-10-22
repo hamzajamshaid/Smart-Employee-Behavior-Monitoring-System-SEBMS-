@@ -1,238 +1,237 @@
+import json
 from flask import Blueprint, jsonify, request, current_app
-from flask_jwt_extended import jwt_required, get_jwt_identity
-from sqlalchemy import func
+from flask_jwt_extended import jwt_required
 from datetime import datetime, timedelta
+from sqlalchemy import or_
+from app.models import BehavioralScore, Interaction, ResponseTimeRecord, Employee
 
 dashboard_bp = Blueprint('dashboard', __name__)
 
-def get_date_range():
-    try:
-        period = request.args.get('period', 'month')
-        date_from = request.args.get('date_from')
-        date_to = request.args.get('date_to')
-        now = datetime.utcnow()
-        
-        if period == 'today':
-            return now.replace(hour=0, minute=0, second=0), now
-        elif period == 'week':
-            return now - timedelta(days=7), now
-        elif period == 'month':
-            return now - timedelta(days=30), now
-        elif date_from and date_to:
-            try:
-                return datetime.fromisoformat(date_from), datetime.fromisoformat(date_to)
-            except ValueError:
-                return now - timedelta(days=30), now
-        
-        return now - timedelta(days=30), now
-    except Exception:
-        now = datetime.utcnow()
-        return now - timedelta(days=30), now
+
+def _avg(values):
+    """Average over real values only. Returns None (not 0) if nothing was measured."""
+    vals = [v for v in values if v is not None]
+    return round(sum(vals) / len(vals), 2) if vals else None
+
+
+def _period_start(period):
+    today = datetime.utcnow().date()
+    if period == 'today':
+        return today
+    if period == 'week':
+        return today - timedelta(days=7)
+    if period == 'month':
+        return today - timedelta(days=30)
+    return None  # 'all'
+
+
+def _valid_scores(session):
+    # 'scored' rows, plus legacy seed rows that have no status (kept as valid data)
+    q = session.query(BehavioralScore).filter(
+        or_(BehavioralScore.score_status == 'scored',
+            BehavioralScore.score_status.is_(None))
+    )
+    # Default: measured rows only. Seed rows (no interaction) appear only with include_seed=1.
+    if request.args.get('include_seed') != '1':
+        q = q.filter(BehavioralScore.interaction_id.isnot(None))
+    return q
+
+
+def _scoped_employee_id():
+    """Admin: may filter by any employee_id query param.
+    Employee: forced to their own ID (client value ignored).
+    Any other role: -1, which matches no rows."""
+    from flask_jwt_extended import get_jwt, get_jwt_identity
+    role = get_jwt().get('role')
+    if role == 'Admin':
+        return request.args.get('employee_id', type=int)
+    if role == 'Employee':
+        return int(get_jwt_identity())
+    return -1
+
 
 @dashboard_bp.route('/dashboard/summary', methods=['GET'])
 @jwt_required()
-def get_summary():
+def dashboard_summary():
+    session = current_app.SessionLocal()
     try:
-        identity = get_jwt_identity()
-        user_id = int(identity)
-        
-        session = current_app.SessionLocal()
-        
-        try:
-            from app.models import BehavioralScore, User
-            
-            user = session.query(User).filter_by(id=user_id).first()
-            if not user or user.role != 'Admin':
-                return jsonify({'error': 'Unauthorized'}), 403
-            
-            date_from, date_to = get_date_range()
-            
-            scores = session.query(BehavioralScore).filter(
-                BehavioralScore.date >= date_from,
-                BehavioralScore.date <= date_to
-            ).all()
-            
-            avg_score = sum([s.unified_score for s in scores]) / len(scores) if scores else 0
-            avg_presence = sum([s.presence_score for s in scores]) / len(scores) if scores else 0
-            avg_response = sum([s.response_score for s in scores]) / len(scores) if scores else 0
-            avg_feedback = sum([s.feedback_score for s in scores]) / len(scores) if scores else 0
-            avg_voice = sum([s.voice_score for s in scores]) / len(scores) if scores else 0
-            
-            return jsonify({
-                'unified_score': round(float(avg_score), 1),
-                'presence_rate': round(float(avg_presence), 1),
-                'avg_response': round(float(avg_response), 1),
-                'feedback': round(float(avg_feedback), 1),
-                'avg_voice': round(float(avg_voice), 1),
-                'active_alerts': 0
-            }), 200
-        
-        finally:
-            session.close()
-    
-    except Exception as e:
-        return jsonify({'error': f'Server error: {str(e)}'}), 500
+        period = request.args.get('period', 'week')
+        employee_id = _scoped_employee_id()
+        start = _period_start(period)
 
-@dashboard_bp.route('/dashboard/trend', methods=['GET'])
-@jwt_required()
-def get_trend():
-    try:
-        identity = get_jwt_identity()
-        user_id = int(identity)
-        
-        session = current_app.SessionLocal()
-        
-        try:
-            from app.models import BehavioralScore, Employee, User
-            
-            user = session.query(User).filter_by(id=user_id).first()
-            if not user or user.role != 'Admin':
-                return jsonify({'error': 'Unauthorized'}), 403
-            
-            date_from, date_to = get_date_range()
-            
-            employees = session.query(Employee).filter_by(status='Active').all()
-            result = {}
-            
-            for emp in employees:
-                scores = session.query(BehavioralScore).filter(
-                    BehavioralScore.employee_id == emp.id,
-                    BehavioralScore.date >= date_from,
-                    BehavioralScore.date <= date_to
-                ).order_by(BehavioralScore.date.asc()).all()
-                
-                result[emp.name] = [
-                    {
-                        'date': s.date.strftime('%Y-%m-%d') if s.date else None,
-                        'score': round(s.unified_score, 1)
-                    }
-                    for s in scores
-                ]
-            
-            return jsonify(result), 200
-        
-        finally:
-            session.close()
-    
+        query = _valid_scores(session)
+        if start:
+            query = query.filter(BehavioralScore.date >= start)
+        if employee_id:
+            query = query.filter(BehavioralScore.employee_id == employee_id)
+        scores = query.all()
+
+        insufficient = session.query(BehavioralScore).filter(
+            BehavioralScore.score_status == 'insufficient_signals')
+        if start:
+            insufficient = insufficient.filter(BehavioralScore.date >= start)
+        if employee_id:
+            insufficient = insufficient.filter(BehavioralScore.employee_id == employee_id)
+
+        return jsonify({
+            'period': period,
+            'total_interactions': len(scores),
+            'insufficient_signal_count': insufficient.count(),
+            'avg_unified_score': _avg([s.unified_score for s in scores]),
+            'avg_presence': _avg([s.presence_score for s in scores]),
+            'avg_emotion': _avg([s.emotion_score for s in scores]),
+            'avg_voice': _avg([s.voice_score for s in scores]),
+            # Response and feedback are not fused yet (see Phase 9 / Phase 8)
+            'avg_response': None,
+            'avg_feedback': None,
+        }), 200
     except Exception as e:
-        return jsonify({'error': f'Server error: {str(e)}'}), 500
+        return jsonify({'error': 'summary unavailable', 'detail': str(e)}), 500
+    finally:
+        session.close()
+
+
+def _processing_status(interaction, score):
+    if interaction.end_timestamp is None:
+        return 'in_progress'
+    if score is None:
+        return 'not_processed'
+    return score.score_status or 'legacy'
+
+
+def _missing_reasons(score):
+    if score is None or not score.error_details:
+        return {}
+    try:
+        return json.loads(score.error_details)
+    except (ValueError, TypeError):
+        return {'raw': score.error_details}
+
 
 @dashboard_bp.route('/dashboard/interactions', methods=['GET'])
 @jwt_required()
-def get_interactions_filtered():
+def dashboard_interactions():
+    session = current_app.SessionLocal()
     try:
-        identity = get_jwt_identity()
-        user_id = int(identity)
-        
-        session = current_app.SessionLocal()
-        
-        try:
-            from app.models import Interaction, User
-            
-            user = session.query(User).filter_by(id=user_id).first()
-            if not user or user.role != 'Admin':
-                return jsonify({'error': 'Unauthorized'}), 403
-            
-            date_from, date_to = get_date_range()
-            
-            interactions = session.query(Interaction).filter(
-                Interaction.start_timestamp >= date_from,
-                Interaction.start_timestamp <= date_to
-            ).order_by(Interaction.start_timestamp.desc()).limit(50).all()
-            
-            result = []
-            for i in interactions:
-                result.append({
-                    'id': i.id,
-                    'employee_id': i.employee_id,
-                    'employee_name': i.employee.name if i.employee else 'Unknown',
-                    'time': i.start_timestamp.strftime('%H:%M') if i.start_timestamp else None,
-                    'present': i.presence_record.is_present if i.presence_record else None,
-                    'emotion': round(i.emotion_record.emotion_score, 1) if i.emotion_record else None,
-                    'response': round(i.response_time_record.response_seconds, 1) if i.response_time_record else None,
-                    'feedback': i.customer_feedback.star_rating if i.customer_feedback else None,
-                    'voice': round(i.voice_record.voice_score, 1) if i.voice_record else None
-                })
-            
-            return jsonify(result), 200
-        
-        finally:
-            session.close()
-    
-    except Exception as e:
-        return jsonify({'error': f'Server error: {str(e)}'}), 500
+        period = request.args.get('period', 'week')
+        employee_id = _scoped_employee_id()
+        start = _period_start(period)
 
-@dashboard_bp.route('/alerts', methods=['GET'])
-@jwt_required()
-def get_alerts():
-    try:
-        identity = get_jwt_identity()
-        user_id = int(identity)
-        
-        session = current_app.SessionLocal()
-        
-        try:
-            from app.models import Alert, User
-            
-            user = session.query(User).filter_by(id=user_id).first()
-            if not user or user.role != 'Admin':
-                return jsonify({'error': 'Only admins can view alerts'}), 403
-            
-            alerts = session.query(Alert).order_by(Alert.triggered_at.desc()).limit(50).all()
-            
-            result = []
-            for a in alerts:
-                result.append({
-                    'id': a.id,
-                    'employee_id': a.employee_id,
-                    'employee_name': a.employee.name if a.employee else 'Unknown',
-                    'alert_type': a.alert_type,
-                    'message': a.message,
-                    'triggered_at': a.triggered_at.isoformat() if a.triggered_at else None,
-                    'is_resolved': a.is_resolved
-                })
-            
-            return jsonify(result), 200
-        
-        finally:
-            session.close()
-    
-    except Exception as e:
-        return jsonify({'error': f'Server error: {str(e)}'}), 500
+        query = session.query(Interaction)
+        if start:
+            query = query.filter(Interaction.start_timestamp >= start)
+        if employee_id:
+            query = query.filter(Interaction.employee_id == employee_id)
+        interactions = query.order_by(Interaction.start_timestamp.desc()).limit(200).all()
 
-@dashboard_bp.route('/alerts/<int:alert_id>/resolve', methods=['PUT'])
-@jwt_required()
-def resolve_alert(alert_id):
-    try:
-        identity = get_jwt_identity()
-        user_id = int(identity)
-        
-        session = current_app.SessionLocal()
-        
-        try:
-            from app.models import Alert, User
-            
-            user = session.query(User).filter_by(id=user_id).first()
-            if not user or user.role != 'Admin':
-                return jsonify({'error': 'Only admins can resolve alerts'}), 403
-            
-            alert = session.query(Alert).filter_by(id=alert_id).first()
-            
-            if not alert:
-                return jsonify({'error': 'Alert not found'}), 404
-            
-            alert.is_resolved = True
-            alert.resolved_at = datetime.utcnow()
-            session.commit()
-            
-            return jsonify({
-                'id': alert.id,
-                'is_resolved': alert.is_resolved,
-                'message': 'Alert resolved'
-            }), 200
-        
-        finally:
-            session.close()
-    
+        rows = []
+        for it in interactions:
+            score = session.query(BehavioralScore).filter(
+                BehavioralScore.interaction_id == it.id).first()
+            rt = session.query(ResponseTimeRecord).filter(
+                ResponseTimeRecord.interaction_id == it.id).first()
+            rows.append({
+                'id': it.id,
+                'employee_id': it.employee_id,
+                'employee_name': it.employee.name if it.employee else None,
+                'start_timestamp': it.start_timestamp.isoformat() if it.start_timestamp else None,
+                'end_timestamp': it.end_timestamp.isoformat() if it.end_timestamp else None,
+                'processing_status': _processing_status(it, score),
+                'unified_score': score.unified_score if score else None,
+                'presence_score': score.presence_score if score else None,
+                'emotion_score': score.emotion_score if score else None,
+                'voice_score': score.voice_score if score else None,
+                'signals_used': score.signals_used.split(',') if score and score.signals_used else [],
+                'missing_reasons': _missing_reasons(score),
+                'response_seconds': rt.response_seconds if rt else None,
+                'response_status': rt.status if rt else 'missing_event',
+            })
+        return jsonify(rows), 200
     except Exception as e:
-        return jsonify({'error': f'Server error: {str(e)}'}), 500
+        return jsonify({'error': 'interactions unavailable', 'detail': str(e)}), 500
+    finally:
+        session.close()
+
+
+@dashboard_bp.route('/dashboard/trend', methods=['GET'])
+@jwt_required()
+def dashboard_trend():
+    """Returns {employee_name: [{date, score}]}, all series on the same date axis.
+    score is the daily mean of valid unified scores; null where no valid score exists."""
+    session = current_app.SessionLocal()
+    try:
+        period = request.args.get('period')
+        if period:
+            start = _period_start(period)
+        else:
+            days = request.args.get('days', 7, type=int)
+            start = datetime.utcnow().date() - timedelta(days=days)
+        employee_id = _scoped_employee_id()
+
+        query = _valid_scores(session)
+        if start:
+            query = query.filter(BehavioralScore.date >= start)
+        if employee_id:
+            query = query.filter(BehavioralScore.employee_id == employee_id)
+        scores = query.all()
+        names = {e.id: e.name for e in session.query(Employee).all()}
+
+        buckets = {}
+        for sc in scores:
+            if sc.unified_score is None:
+                continue
+            name = names.get(sc.employee_id, str(sc.employee_id))
+            day = sc.date.date().isoformat()
+            buckets.setdefault(name, {}).setdefault(day, []).append(sc.unified_score)
+
+        all_days = sorted({d for series in buckets.values() for d in series})
+        result = {}
+        for name, by_day in buckets.items():
+            result[name] = [{
+                'date': d,
+                'score': round(sum(by_day[d]) / len(by_day[d]), 2) if d in by_day else None,
+            } for d in all_days]
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({'error': 'trend unavailable', 'detail': str(e)}), 500
+    finally:
+        session.close()
+
+
+@dashboard_bp.route('/dashboard/performers', methods=['GET'])
+@jwt_required()
+def dashboard_performers():
+    from flask_jwt_extended import get_jwt
+    if get_jwt().get('role') != 'Admin':
+        return jsonify({'error': 'Admin role required'}), 403
+    """Per-employee average over MEASURED interactions only (interaction_id not null).
+    Employees with no measured data are returned with avg=null and are not ranked."""
+    session = current_app.SessionLocal()
+    try:
+        period = request.args.get('period', 'month')
+        start = _period_start(period)
+        q = _valid_scores(session)
+        if start:
+            q = q.filter(BehavioralScore.date >= start)
+        buckets = {}
+        for sc in q.all():
+            if sc.unified_score is None:
+                continue
+            buckets.setdefault(sc.employee_id, []).append(sc.unified_score)
+        rows = []
+        for e in session.query(Employee).all():
+            vals = buckets.get(e.id, [])
+            rows.append({
+                'employee_id': e.id,
+                'name': e.name,
+                'measured_count': len(vals),
+                'avg_unified_score': round(sum(vals) / len(vals), 2) if vals else None,
+            })
+        ranked = sorted([r for r in rows if r['avg_unified_score'] is not None],
+                        key=lambda r: r['avg_unified_score'], reverse=True)
+        unranked = [r for r in rows if r['avg_unified_score'] is None]
+        return jsonify({'ranked': ranked[:3], 'unranked': unranked}), 200
+    except Exception as e:
+        return jsonify({'error': 'performers unavailable', 'detail': str(e)}), 500
+    finally:
+        session.close()

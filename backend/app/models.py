@@ -1,3 +1,4 @@
+from sqlalchemy.dialects.mysql import DATETIME as MySQLDATETIME
 from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, Text, ForeignKey, Enum
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
@@ -142,12 +143,16 @@ class BehavioralScore(Base):
     id = Column(Integer, primary_key=True)
     employee_id = Column(Integer, ForeignKey('employees.id'), nullable=False)
     date = Column(DateTime, nullable=False)
-    presence_score = Column(Float, default=0)
-    emotion_score = Column(Float, default=0)
-    response_score = Column(Float, default=0)
-    feedback_score = Column(Float, default=0)
-    voice_score = Column(Float, default=0)
-    unified_score = Column(Float, default=0)  # Weighted average
+    presence_score = Column(Float, nullable=True)
+    emotion_score = Column(Float, nullable=True)
+    response_score = Column(Float, nullable=True)
+    feedback_score = Column(Float, nullable=True)
+    voice_score = Column(Float, nullable=True)
+    unified_score = Column(Float, nullable=True)  # Weighted average
+    interaction_id = Column(Integer, nullable=True, unique=True)
+    signals_used = Column(String(200), nullable=True)
+    score_status = Column(String(30), nullable=True)
+    error_details = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relationships
@@ -177,11 +182,14 @@ class EmotionRecord(Base):
 
 class ResponseTimeRecord(Base):
     __tablename__ = 'response_time_records'
-    
+
     id = Column(Integer, primary_key=True)
-    interaction_id = Column(Integer, ForeignKey('interactions.id'), nullable=False)
-    response_seconds = Column(Float, default=0)
-    
+    interaction_id = Column(Integer, ForeignKey('interactions.id'), nullable=False, unique=True)
+    arrival_at = Column(MySQLDATETIME(fsp=3), nullable=True)
+    response_at = Column(MySQLDATETIME(fsp=3), nullable=True)
+    response_seconds = Column(Float, nullable=True)  # None = not measured
+    status = Column(String(30), nullable=True)
+
     # Relationships
     interaction = relationship('Interaction', back_populates='response_time_record')
 

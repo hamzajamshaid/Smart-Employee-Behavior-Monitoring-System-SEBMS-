@@ -17,10 +17,6 @@ logger = logging.getLogger(__name__)
 def create_app():
     app = Flask(__name__)
     
-    # ============================================================================
-    # CONFIG
-    # ============================================================================
-    
     secret_key = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
     jwt_secret = os.getenv('JWT_SECRET_KEY', 'dev-jwt-secret-change-in-production')
     
@@ -35,10 +31,6 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
-    # ============================================================================
-    # CORS
-    # ============================================================================
-    
     CORS(app, 
          origins=["http://localhost:5173", "http://localhost:5174", "http://127.0.0.1:5173", "http://127.0.0.1:5174"],
          allow_headers=["Content-Type", "Authorization"],
@@ -50,16 +42,8 @@ def create_app():
         if request.method == "OPTIONS":
             return make_response('', 200)
     
-    # ============================================================================
-    # JWT
-    # ============================================================================
-    
     JWTManager(app)
     logger.info("✅ JWT initialized")
-    
-    # ============================================================================
-    # DATABASE
-    # ============================================================================
     
     try:
         engine = create_engine(database_url, echo=False)
@@ -71,26 +55,28 @@ def create_app():
         logger.error(f"❌ DB error: {str(e)}")
         raise
     
-    # ============================================================================
-    # BLUEPRINTS
-    # ============================================================================
-    
     try:
         from app.routes.auth import auth_bp
         from app.routes.employees import employees_bp
         from app.routes.dashboard import dashboard_bp
+        from app.routes.alerts import alerts_bp
         from app.routes.tickets import tickets_bp
         from app.routes.appointments import appointments_bp
         from app.routes.attendance import attendance_bp
         from app.routes.interactions import interactions_bp
+        from app.routes.batch import batch_bp
+        from app.routes.simulate import simulate_bp
         
         app.register_blueprint(auth_bp)
         app.register_blueprint(employees_bp, url_prefix='/api')
         app.register_blueprint(dashboard_bp, url_prefix='/api')
+        app.register_blueprint(alerts_bp, url_prefix='/api')
         app.register_blueprint(tickets_bp, url_prefix='/api')
         app.register_blueprint(appointments_bp, url_prefix='/api')
         app.register_blueprint(attendance_bp, url_prefix='/api')
         app.register_blueprint(interactions_bp, url_prefix='/api')
+        app.register_blueprint(batch_bp, url_prefix='/api')
+        app.register_blueprint(simulate_bp, url_prefix='/api')
         
         logger.info("✅ All routes registered")
     except ImportError as e:

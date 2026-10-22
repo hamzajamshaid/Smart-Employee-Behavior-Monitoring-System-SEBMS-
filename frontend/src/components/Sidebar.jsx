@@ -34,6 +34,7 @@ export default function Sidebar({ userRole }) {
     { path: '/employee-appointments', label: 'Appointments', icon: '📅' },
     { path: '/employee-tickets', label: 'My Tickets', icon: '🎫' },
     { path: '/attendance', label: 'Attendance', icon: '⏱️' },
+    { path: '/simulate', label: 'Simulate Capture', icon: '🎬' },
   ]
 
   const customerMenuItems = [

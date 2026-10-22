@@ -26,6 +26,7 @@ import EmployeeTickets from './pages/EmployeeTickets'
 import EmployeeAppointments from './pages/EmployeeAppointments'
 import Attendance from './pages/Attendance'
 import EmployeeTicketDetail from './pages/EmployeeTicketDetail'
+import SimulationCapture from './pages/SimulationCapture'
 
 // Customer Pages
 import CustomerDashboard from './pages/CustomerDashboard'
@@ -119,6 +120,7 @@ export default function App() {
           <Route path="/employee-tickets/:id" element={<ProtectedRoute requiredRole="Employee"><EmployeeTicketDetail /></ProtectedRoute>} />
           <Route path="/employee-appointments" element={<ProtectedRoute requiredRole="Employee"><EmployeeAppointments /></ProtectedRoute>} />
           <Route path="/attendance" element={<ProtectedRoute requiredRole="Employee"><Attendance /></ProtectedRoute>} />
+          <Route path="/simulate" element={<ProtectedRoute requiredRole="Employee"><SimulationCapture /></ProtectedRoute>} />
 
           {/* CUSTOMER ROUTES */}
           <Route path="/customer-dashboard" element={<ProtectedRoute requiredRole="Customer"><CustomerDashboard /></ProtectedRoute>} />

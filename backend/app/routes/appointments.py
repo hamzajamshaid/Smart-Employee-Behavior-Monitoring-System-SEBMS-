@@ -1,8 +1,19 @@
 from flask import Blueprint, jsonify, request, current_app
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from datetime import datetime
 
 appointments_bp = Blueprint('appointments', __name__)
+
+def _appt_visible(a):
+    role, uid = get_jwt().get('role'), int(get_jwt_identity())
+    if role == 'Admin':
+        return True
+    if role == 'Customer':
+        return a.customer_id == uid
+    if role == 'Employee':
+        return a.employee_id == uid
+    return False
+
 
 @appointments_bp.route('/appointments/service-types', methods=['GET'])
 def get_service_types():
@@ -29,7 +40,16 @@ def get_appointments():
         try:
             from app.models import Appointment, Customer, Employee
             
-            appointments = session.query(Appointment).all()
+            from flask_jwt_extended import get_jwt
+            _role = get_jwt().get('role')
+            if _role == 'Admin':
+                appointments = session.query(Appointment).all()
+            elif _role == 'Employee':
+                appointments = session.query(Appointment).filter(Appointment.employee_id == user_id).all()
+            elif _role == 'Customer':
+                appointments = session.query(Appointment).filter(Appointment.customer_id == user_id).all()
+            else:
+                appointments = []
             
             result = []
             for a in appointments:
@@ -66,6 +86,9 @@ def create_appointment():
         session = current_app.SessionLocal()
         
         try:
+            from flask_jwt_extended import get_jwt
+            if get_jwt().get('role') != 'Customer':
+                return jsonify({'error': 'Customer role required'}), 403
             from app.models import Appointment, Customer
             
             customer = session.query(Customer).filter_by(id=user_id).first()
@@ -117,6 +140,8 @@ def get_appointment_detail(appointment_id):
             
             if not appointment:
                 return jsonify({'error': 'Appointment not found'}), 404
+            if not _appt_visible(appointment):
+                return jsonify({'error': 'Appointment not found'}), 404
             
             return jsonify({
                 'id': appointment.id,
@@ -155,6 +180,8 @@ def update_appointment(appointment_id):
             
             if not appointment:
                 return jsonify({'error': 'Appointment not found'}), 404
+            if not _appt_visible(appointment):
+                return jsonify({'error': 'Appointment not found'}), 404
             
             data = request.get_json()
             if not data:
@@ -162,7 +189,7 @@ def update_appointment(appointment_id):
             
             if 'status' in data:
                 appointment.status = data['status']
-            if 'employee_id' in data:
+            if 'employee_id' in data and get_jwt().get('role') == 'Admin':
                 appointment.employee_id = data['employee_id']
             
             appointment.updated_at = datetime.utcnow()
@@ -195,6 +222,8 @@ def cancel_appointment(appointment_id):
             appointment = session.query(Appointment).filter_by(id=appointment_id).first()
             
             if not appointment:
+                return jsonify({'error': 'Appointment not found'}), 404
+            if not _appt_visible(appointment):
                 return jsonify({'error': 'Appointment not found'}), 404
             
             appointment.status = 'Cancelled'

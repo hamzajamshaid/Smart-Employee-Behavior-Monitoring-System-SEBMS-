@@ -1,12 +1,59 @@
 from flask import Blueprint, jsonify, request, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
+from app.models import Interaction, Employee
 
 interactions_bp = Blueprint('interactions', __name__)
 
-@interactions_bp.route('/interactions', methods=['GET'])
+@interactions_bp.route('/interactions/start', methods=['POST'])
 @jwt_required()
-def get_interactions():
+def start_interaction():
+    try:
+        from app.services.file_manager import get_file_manager
+        
+        identity = get_jwt_identity()
+        employee_id = int(identity)
+        
+        session = current_app.SessionLocal()
+        
+        try:
+            employee = session.query(Employee).filter_by(id=employee_id).first()
+            if not employee:
+                return jsonify({'error': 'Employee not found'}), 404
+            
+            interaction = Interaction(
+                employee_id=employee_id,
+                start_timestamp=datetime.utcnow(),
+                video_file_path=None
+            )
+            
+            session.add(interaction)
+            session.commit()
+            
+            file_manager = get_file_manager()
+            video_path = file_manager.get_video_path(interaction.id)
+            audio_path = file_manager.get_audio_path(interaction.id)
+            
+            return jsonify({
+                'id': interaction.id,
+                'employee_id': employee_id,
+                'employee_name': employee.name,
+                'start_timestamp': interaction.start_timestamp.isoformat(),
+                'video_file_path': video_path,
+                'audio_file_path': audio_path,
+                'status': 'started',
+                'message': 'Interaction started. Begin capturing video/audio.'
+            }), 201
+        
+        finally:
+            session.close()
+    
+    except Exception as e:
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
+
+@interactions_bp.route('/interactions/<int:interaction_id>/end', methods=['PUT'])
+@jwt_required()
+def end_interaction(interaction_id):
     try:
         identity = get_jwt_identity()
         user_id = int(identity)
@@ -14,9 +61,63 @@ def get_interactions():
         session = current_app.SessionLocal()
         
         try:
-            from app.models import Interaction
+            interaction = session.query(Interaction).filter_by(id=interaction_id).first()
             
-            interactions = session.query(Interaction).all()
+            if not interaction:
+                return jsonify({'error': 'Interaction not found'}), 404
+            
+            if interaction.employee_id != user_id:
+                return jsonify({'error': 'Unauthorized'}), 403
+            
+            data = request.get_json() or {}
+            
+            if 'end_timestamp' in data:
+                interaction.end_timestamp = datetime.fromisoformat(data['end_timestamp'])
+            else:
+                interaction.end_timestamp = datetime.utcnow()
+            
+            if 'video_file_path' in data:
+                interaction.video_file_path = data['video_file_path']
+            
+            session.commit()
+            
+            return jsonify({
+                'id': interaction.id,
+                'employee_id': interaction.employee_id,
+                'start_timestamp': interaction.start_timestamp.isoformat(),
+                'end_timestamp': interaction.end_timestamp.isoformat(),
+                'duration_seconds': (interaction.end_timestamp - interaction.start_timestamp).total_seconds(),
+                'status': 'queued_for_processing',
+                'message': 'Interaction ended. Queued for behavioral analysis.'
+            }), 200
+        
+        finally:
+            session.close()
+    
+    except Exception as e:
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
+
+def _caller():
+    """Return (role, user_id) from the token. Never trust a client-supplied employee_id."""
+    from flask_jwt_extended import get_jwt, get_jwt_identity
+    return get_jwt().get('role'), int(get_jwt_identity())
+
+
+@interactions_bp.route('/interactions', methods=['GET'])
+@jwt_required()
+def get_interactions():
+    try:
+        role, user_id = _caller()
+        if role not in ('Admin', 'Employee'):
+            return jsonify([]), 200
+        
+        session = current_app.SessionLocal()
+        
+        try:
+            q = session.query(Interaction)
+            if role == 'Employee':
+                q = q.filter(Interaction.employee_id == user_id)
+            interactions = q.all()
             
             result = []
             for i in interactions:
@@ -37,63 +138,20 @@ def get_interactions():
     except Exception as e:
         return jsonify({'error': f'Server error: {str(e)}'}), 500
 
-@interactions_bp.route('/interactions', methods=['POST'])
-@jwt_required()
-def create_interaction():
-    try:
-        identity = get_jwt_identity()
-        user_id = int(identity)
-        
-        session = current_app.SessionLocal()
-        
-        try:
-            from app.models import Interaction, Employee
-            
-            employee = session.query(Employee).filter_by(id=user_id).first()
-            if not employee:
-                return jsonify({'error': 'Employee not found'}), 404
-            
-            data = request.get_json()
-            if not data:
-                return jsonify({'error': 'Request body required'}), 400
-            
-            interaction = Interaction(
-                employee_id=user_id,
-                start_timestamp=datetime.utcnow(),
-                video_file_path=data.get('video_file_path')
-            )
-            
-            session.add(interaction)
-            session.commit()
-            
-            return jsonify({
-                'id': interaction.id,
-                'employee_id': interaction.employee_id,
-                'start_timestamp': interaction.start_timestamp.isoformat(),
-                'message': 'Interaction created'
-            }), 201
-        
-        finally:
-            session.close()
-    
-    except Exception as e:
-        return jsonify({'error': f'Server error: {str(e)}'}), 500
-
 @interactions_bp.route('/interactions/<int:interaction_id>', methods=['GET'])
 @jwt_required()
 def get_interaction_detail(interaction_id):
     try:
-        identity = get_jwt_identity()
-        user_id = int(identity)
+        role, user_id = _caller()
+        if role not in ('Admin', 'Employee'):
+            return jsonify({'error': 'Interaction not found'}), 404
         
         session = current_app.SessionLocal()
         
         try:
-            from app.models import Interaction
-            
             interaction = session.query(Interaction).filter_by(id=interaction_id).first()
             
-            if not interaction:
+            if not interaction or (role == 'Employee' and interaction.employee_id != user_id):
                 return jsonify({'error': 'Interaction not found'}), 404
             
             return jsonify({
@@ -112,42 +170,3 @@ def get_interaction_detail(interaction_id):
     except Exception as e:
         return jsonify({'error': f'Server error: {str(e)}'}), 500
 
-@interactions_bp.route('/interactions/<int:interaction_id>', methods=['PUT'])
-@jwt_required()
-def update_interaction(interaction_id):
-    try:
-        identity = get_jwt_identity()
-        user_id = int(identity)
-        
-        session = current_app.SessionLocal()
-        
-        try:
-            from app.models import Interaction
-            
-            interaction = session.query(Interaction).filter_by(id=interaction_id).first()
-            
-            if not interaction:
-                return jsonify({'error': 'Interaction not found'}), 404
-            
-            data = request.get_json()
-            if not data:
-                return jsonify({'error': 'Request body required'}), 400
-            
-            if 'end_timestamp' in data:
-                interaction.end_timestamp = datetime.fromisoformat(data['end_timestamp'])
-            if 'video_file_path' in data:
-                interaction.video_file_path = data['video_file_path']
-            
-            session.commit()
-            
-            return jsonify({
-                'id': interaction.id,
-                'end_timestamp': interaction.end_timestamp.isoformat() if interaction.end_timestamp else None,
-                'message': 'Interaction updated'
-            }), 200
-        
-        finally:
-            session.close()
-    
-    except Exception as e:
-        return jsonify({'error': f'Server error: {str(e)}'}), 500

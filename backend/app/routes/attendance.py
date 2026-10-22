@@ -20,7 +20,14 @@ def get_attendance():
             if not employee:
                 return jsonify({'error': 'Employee not found'}), 404
             
-            records = session.query(Attendance).filter_by(employee_id=user_id).all()
+            from flask_jwt_extended import get_jwt
+            _role = get_jwt().get('role')
+            if _role == 'Admin':
+                records = session.query(Attendance).all()
+            elif _role == 'Employee':
+                records = session.query(Attendance).filter_by(employee_id=user_id).all()
+            else:
+                records = []
             
             result = []
             for r in records:

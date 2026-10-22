@@ -8,6 +8,14 @@ import string
 
 employees_bp = Blueprint('employees', __name__)
 
+def _admin_only():
+    """Refuse unless the token carries the Admin role (checked before any DB access)."""
+    from flask_jwt_extended import get_jwt
+    if get_jwt().get('role') != 'Admin':
+        return jsonify({'error': 'Admin role required'}), 403
+    return None
+
+
 def generate_employee_code():
     return 'EMP' + ''.join(random.choices(string.digits, k=3))
 
@@ -25,6 +33,9 @@ def hash_pw(pw):
 @employees_bp.route('/employees', methods=['POST'])
 @jwt_required()
 def add_employee():
+    denied = _admin_only()
+    if denied:
+        return denied
     try:
         identity = get_jwt_identity()
         user_id = int(identity)
@@ -95,6 +106,9 @@ def add_employee():
 @employees_bp.route('/employees', methods=['GET'])
 @jwt_required()
 def get_employees():
+    denied = _admin_only()
+    if denied:
+        return denied
     try:
         identity = get_jwt_identity()
         user_id = int(identity)
@@ -148,6 +162,9 @@ def get_employees():
 @employees_bp.route('/employees/<int:employee_id>', methods=['GET'])
 @jwt_required()
 def get_employee_detail(employee_id):
+    denied = _admin_only()
+    if denied:
+        return denied
     try:
         identity = get_jwt_identity()
         user_id = int(identity)
@@ -207,6 +224,9 @@ def get_employee_detail(employee_id):
 @employees_bp.route('/employees/<int:employee_id>/status', methods=['PUT'])
 @jwt_required()
 def update_employee_status(employee_id):
+    denied = _admin_only()
+    if denied:
+        return denied
     try:
         identity = get_jwt_identity()
         user_id = int(identity)
@@ -261,6 +281,9 @@ def update_employee_status(employee_id):
 @employees_bp.route('/employees/<int:employee_id>/reset-password', methods=['PUT'])
 @jwt_required()
 def reset_employee_password(employee_id):
+    denied = _admin_only()
+    if denied:
+        return denied
     try:
         identity = get_jwt_identity()
         user_id = int(identity)
@@ -303,6 +326,9 @@ def reset_employee_password(employee_id):
 @employees_bp.route('/employees/<int:employee_id>', methods=['DELETE'])
 @jwt_required()
 def delete_employee(employee_id):
+    denied = _admin_only()
+    if denied:
+        return denied
     try:
         identity = get_jwt_identity()
         user_id = int(identity)

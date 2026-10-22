@@ -23,7 +23,7 @@ export default function Alerts() {
   const fetchAlerts = async () => {
     try {
       const res = await axios.get(`${API_BASE}/api/alerts`, { headers });
-      setAlerts(res.data || []);
+      setAlerts((res.data || []).filter(a => !a.is_resolved));
     } catch (err) {
       console.error('Fetch error:', err);
     } finally {

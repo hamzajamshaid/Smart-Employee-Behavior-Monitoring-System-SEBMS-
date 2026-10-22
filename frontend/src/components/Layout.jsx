@@ -6,7 +6,7 @@ export default function MainLayout() {
   const userRole = localStorage.getItem('role')
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f5f8fc' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#fcf7f5' }}>
       <Sidebar userRole={userRole} />
       <main style={{ 
         flex: 1, 

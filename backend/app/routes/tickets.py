@@ -1,8 +1,19 @@
 from flask import Blueprint, jsonify, request, current_app
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from datetime import datetime
 
 tickets_bp = Blueprint('tickets', __name__)
+
+def _ticket_visible(t):
+    role, uid = get_jwt().get('role'), int(get_jwt_identity())
+    if role == 'Admin':
+        return True
+    if role == 'Customer':
+        return t.customer_id == uid
+    if role == 'Employee':
+        return t.employee_id == uid
+    return False
+
 
 @tickets_bp.route('/tickets/analytics', methods=['GET'])
 @jwt_required()
@@ -17,7 +28,8 @@ def get_ticket_analytics():
             from app.models import User, Ticket
             
             user = session.query(User).filter_by(id=user_id).first()
-            if not user or user.role != 'Admin':
+            from flask_jwt_extended import get_jwt
+            if get_jwt().get('role') != 'Admin':
                 return jsonify({'error': 'Only admins can view analytics'}), 403
             
             tickets = session.query(Ticket).all()
@@ -55,11 +67,16 @@ def get_tickets():
         try:
             from app.models import User, Ticket
             
-            user = session.query(User).filter_by(id=user_id).first()
-            if not user:
-                return jsonify({'error': 'User not found'}), 404
             
-            tickets = session.query(Ticket).all()
+            _role = get_jwt().get('role')
+            if _role == 'Admin':
+                tickets = session.query(Ticket).all()
+            elif _role == 'Customer':
+                tickets = session.query(Ticket).filter(Ticket.customer_id == user_id).all()
+            elif _role == 'Employee':
+                tickets = session.query(Ticket).filter(Ticket.employee_id == user_id).all()
+            else:
+                tickets = []
             
             result = []
             for t in tickets:
@@ -104,6 +121,8 @@ def get_ticket_detail(ticket_id):
             
             if not ticket:
                 return jsonify({'error': 'Ticket not found'}), 404
+            if not _ticket_visible(ticket):
+                return jsonify({'error': 'Ticket not found'}), 404
             
             return jsonify({
                 'id': ticket.id,
@@ -138,6 +157,9 @@ def create_ticket():
         session = current_app.SessionLocal()
         
         try:
+            from flask_jwt_extended import get_jwt
+            if get_jwt().get('role') != 'Customer':
+                return jsonify({'error': 'Customer role required'}), 403
             from app.models import Ticket, Customer
             
             customer = session.query(Customer).filter_by(id=user_id).first()
@@ -185,8 +207,7 @@ def update_ticket(ticket_id):
         try:
             from app.models import Ticket, User
             
-            user = session.query(User).filter_by(id=user_id).first()
-            if not user or user.role != 'Admin':
+            if get_jwt().get('role') != 'Admin':
                 return jsonify({'error': 'Only admins can update tickets'}), 403
             
             ticket = session.query(Ticket).filter_by(id=ticket_id).first()
@@ -235,8 +256,11 @@ def get_ticket_messages(ticket_id):
         session = current_app.SessionLocal()
         
         try:
-            from app.models import TicketMessage
+            from app.models import TicketMessage, Ticket
             
+            _t = session.query(Ticket).filter_by(id=ticket_id).first()
+            if not _t or not _ticket_visible(_t):
+                return jsonify({'error': 'Ticket not found'}), 404
             messages = session.query(TicketMessage).filter_by(ticket_id=ticket_id).all()
             
             result = []
@@ -272,6 +296,8 @@ def add_ticket_message(ticket_id):
             ticket = session.query(Ticket).filter_by(id=ticket_id).first()
             if not ticket:
                 return jsonify({'error': 'Ticket not found'}), 404
+            if not _ticket_visible(ticket):
+                return jsonify({'error': 'Ticket not found'}), 404
             
             data = request.get_json()
             if not data:
@@ -281,7 +307,7 @@ def add_ticket_message(ticket_id):
             customer = session.query(Customer).filter_by(id=user_id).first()
             employee = session.query(Employee).filter_by(id=user_id).first()
             
-            sender_type = 'Customer' if customer else 'Employee'
+            sender_type = get_jwt().get('role') or 'Unknown'
             
             message = TicketMessage(
                 ticket_id=ticket_id,
@@ -317,8 +343,7 @@ def delete_ticket(ticket_id):
         try:
             from app.models import Ticket, User
             
-            user = session.query(User).filter_by(id=user_id).first()
-            if not user or user.role != 'Admin':
+            if get_jwt().get('role') != 'Admin':
                 return jsonify({'error': 'Only admins can delete'}), 403
             
             ticket = session.query(Ticket).filter_by(id=ticket_id).first()

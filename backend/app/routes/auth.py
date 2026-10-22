@@ -38,7 +38,7 @@ def admin_login():
             user.last_login = datetime.utcnow()
             session.commit()
             
-            token = create_access_token(identity=str(user.id))
+            token = create_access_token(identity=str(user.id), additional_claims={'role': user.role})
             
             return jsonify({
                 'token': token,
@@ -82,7 +82,7 @@ def employee_login():
             if employee.status != 'Active':
                 return jsonify({'error': 'Employee account is inactive'}), 403
             
-            token = create_access_token(identity=str(employee.id))
+            token = create_access_token(identity=str(employee.id), additional_claims={'role': 'Employee'})
             
             return jsonify({
                 'token': token,
@@ -124,7 +124,7 @@ def customer_login():
             if not customer.is_active:
                 return jsonify({'error': 'Customer account is inactive'}), 403
             
-            token = create_access_token(identity=str(customer.id))
+            token = create_access_token(identity=str(customer.id), additional_claims={'role': 'Customer'})
             
             return jsonify({
                 'token': token,
@@ -183,7 +183,7 @@ def customer_register():
             session.add(new_customer)
             session.commit()
             
-            token = create_access_token(identity=str(new_customer.id))
+            token = create_access_token(identity=str(new_customer.id), additional_claims={'role': 'Customer'})
             
             return jsonify({
                 'token': token,
