@@ -11,6 +11,9 @@ def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
 def seed_database(session):
+    from app.models import User
+    if session.query(User).count() > 0:
+        raise RuntimeError('Database already has users; refusing to seed a non-empty database')
     """Seed database with initial data"""
     
     print("🌱 Seeding database...")
