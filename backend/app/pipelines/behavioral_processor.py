@@ -11,10 +11,10 @@ logger = logging.getLogger(__name__)
 
 def _extract_audio(video_path, wav_path):
     import shutil, subprocess
-    ff = shutil.which('ffmpeg') or '/opt/anaconda3/bin/ffmpeg'
+    ff = shutil.which('ffmpeg')  # must be on PATH (brew install ffmpeg)
     if not video_path or not os.path.exists(video_path):
         return False, 'video_missing'
-    if not os.path.exists(ff):
+    if not ff:
         return False, 'ffmpeg_not_found'
     r = subprocess.run([ff, '-y', '-loglevel', 'error', '-i', video_path,
                         '-vn', '-ac', '1', '-ar', '16000', wav_path],

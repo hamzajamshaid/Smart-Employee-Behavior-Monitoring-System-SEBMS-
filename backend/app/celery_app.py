@@ -1,4 +1,5 @@
 from celery import Celery
+from celery.schedules import crontab
 import logging
 import os
 import warnings
@@ -23,6 +24,12 @@ celery_app.conf.update(
     enable_utc=True,
     task_track_started=True,
     task_time_limit=30 * 60,
+    beat_schedule={
+        'process-daily-interactions': {
+            'task': 'app.pipelines.behavioral_processor.process_daily_interactions',
+            'schedule': crontab(hour=0, minute=0),  # every day at 00:00 UTC
+        },
+    },
 )
 
 logger.info(f"✅ Celery configured - Broker: {BROKER_URL}")

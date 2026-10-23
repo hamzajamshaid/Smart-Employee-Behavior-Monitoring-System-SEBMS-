@@ -3,7 +3,6 @@
 # ============================================================================
 
 from .constants import *
-from .celery_config import *
 
 __all__ = [
     'PRESENCE_THRESHOLD',
@@ -26,7 +25,5 @@ __all__ = [
     'MEDIAPIPE_CONFIDENCE',
     'WHISPER_MODEL',
     'TRIGGER_MODE',
-    'BROKER_URL',
-    'RESULT_BACKEND',
 ]
 
