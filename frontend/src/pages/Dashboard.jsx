@@ -17,6 +17,8 @@ const cardStyle = { background: '#fff', borderRadius: '10px', padding: '24px', b
 const STATUS_STYLE = {
   scored: ['#00a86b', 'Scored'],
   insufficient_signals: ['#ff9500', 'Insufficient'],
+  no_presence: ['#6b7280', 'No person'],
+  detector_miss: ['#7c3aed', 'Detector miss'],
   failed: ['#e53935', 'Failed'],
   not_processed: ['#999', 'Not processed'],
   in_progress: ['#0052cc', 'In progress'],
@@ -329,7 +331,7 @@ export default function Dashboard() {
                       >
                         <td onClick={() => setSelectedInteraction(i)} style={{ padding: '10px 8px', color: '#1a1a1a', fontWeight: '600', cursor: 'pointer' }}>{i.employee_name || 'N/A'}</td>
                         <td onClick={() => setSelectedInteraction(i)} style={{ padding: '10px 8px', textAlign: 'center', color: '#555', fontSize: '11px', cursor: 'pointer' }}>{i.time || '—'}</td>
-                        <td onClick={() => setSelectedInteraction(i)} style={{ padding: '10px 8px', textAlign: 'center', color: '#1a1a1a', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}>{fmtNum(i.presence_score)}<br />{statusBadge(i.status)}</td>
+                        <td onClick={() => setSelectedInteraction(i)} style={{ padding: '10px 8px', textAlign: 'center', color: '#1a1a1a', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}>{i.status === 'insufficient_signals' ? '—' : fmtNum(i.presence_score)}<br />{statusBadge(i.status)}</td>
                         <td onClick={() => setSelectedInteraction(i)} style={{ padding: '10px 8px', textAlign: 'center', color: '#555', fontSize: '11px', cursor: 'pointer' }}>{fmtPct(i.emotion)}</td>
                         <td onClick={() => setSelectedInteraction(i)} style={{ padding: '10px 8px', textAlign: 'center', color: voiceColor(i.voice), fontWeight: '600', fontSize: '11px', cursor: 'pointer' }}>{fmtPct(i.voice)}</td>
                         <td onClick={() => setSelectedInteraction(i)} style={{ padding: '10px 8px', textAlign: 'center', color: '#555', fontSize: '11px', cursor: 'pointer' }}>{fmtSec(i.response)}</td>

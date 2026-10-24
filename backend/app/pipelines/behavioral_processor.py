@@ -25,6 +25,38 @@ def _extract_audio(video_path, wav_path):
 
 MIN_SIGNALS_FOR_SCORE = 2  # presence must also be present (checked below)
 
+import uuid
+from sqlalchemy.exc import IntegrityError
+
+_LOCK_KEY = 'sebms:batch_lock'
+_LOCK_TTL = 3 * 60 * 60  # seconds; longer than the task time limit
+_RELEASE_LUA = ("if redis.call('get', KEYS[1]) == ARGV[1] then "
+                "return redis.call('del', KEYS[1]) else return 0 end")
+
+
+def _redis():
+    import redis
+    return redis.from_url(os.getenv('REDIS_URL', 'redis://localhost:6379/0'))
+
+
+def _acquire_batch_lock():
+    """Return a token if this run got the lock, None if another batch holds it."""
+    token = uuid.uuid4().hex
+    try:
+        ok = _redis().set(_LOCK_KEY, token, nx=True, ex=_LOCK_TTL)
+    except Exception as e:
+        logger.error(f"Batch lock check failed, not running: {e}")
+        return None
+    return token if ok else None
+
+
+def _release_batch_lock(token):
+    """Release only if we still own the lock (compare-and-delete)."""
+    try:
+        _redis().eval(_RELEASE_LUA, 1, _LOCK_KEY, token)
+    except Exception as e:
+        logger.error(f"Batch lock release failed: {e}")
+
 
 def _fuse(signals):
     """Weighted average over available signals only. Returns None if not scorable."""
@@ -37,6 +69,10 @@ def _fuse(signals):
 @shared_task
 def process_daily_interactions(hours=24, rescore_ids=None):
     rescore = set(rescore_ids or [])
+    lock_token = _acquire_batch_lock()
+    if lock_token is None:
+        logger.warning("Batch skipped: another batch is already running")
+        return {'status': 'skipped_locked'}
     from app import create_app
 
     app = create_app()
@@ -49,13 +85,17 @@ def process_daily_interactions(hours=24, rescore_ids=None):
         from app.services.alert_generator import AlertGenerator
 
         session = app.SessionLocal()
-        counts = {'scored': 0, 'insufficient_signals': 0, 'skipped_duplicate': 0, 'failed': 0}
+        counts = {'scored': 0, 'insufficient_signals': 0, 'no_presence': 0, 'skipped_duplicate': 0, 'failed': 0}
         try:
             cutoff = datetime.utcnow() - timedelta(hours=hours)
-            interactions = session.query(Interaction).filter(
-                Interaction.end_timestamp >= cutoff,
-                Interaction.end_timestamp.isnot(None),
-            ).all()
+            from sqlalchemy import or_
+            base_q = session.query(Interaction).filter(Interaction.end_timestamp.isnot(None))
+            if rescore:
+                # Explicit rescore IDs are processed even outside the time window
+                interactions = base_q.filter(or_(Interaction.end_timestamp >= cutoff,
+                                                 Interaction.id.in_(rescore))).all()
+            else:
+                interactions = base_q.filter(Interaction.end_timestamp >= cutoff).all()
             logger.info(f"Batch: {len(interactions)} interactions in last {hours}h")
 
             ml = MLExecutor()
@@ -114,8 +154,16 @@ def process_daily_interactions(hours=24, rescore_ids=None):
                     errors['response'] = f"{rt_res['status']}: {rt_res.get('error') or 'measured, not fused'}"
                     errors['feedback'] = 'not_implemented'
 
-                    unified = _fuse(signals)
-                    status = 'scored' if unified is not None else 'insufficient_signals'
+                    # Presence gate: no person in frame means voice/expression are not
+                    # a performance measure, so no unified score is produced.
+                    PRESENCE_MIN = 70
+                    if 'presence' in signals and signals['presence'] < PRESENCE_MIN:
+                        unified = None
+                        status = 'no_presence'
+                        errors['gate'] = f"presence {signals['presence']} below {PRESENCE_MIN}"
+                    else:
+                        unified = _fuse(signals)
+                        status = 'scored' if unified is not None else 'insufficient_signals'
 
                     row = BehavioralScore(
                         employee_id=it.employee_id,
@@ -146,6 +194,10 @@ def process_daily_interactions(hours=24, rescore_ids=None):
                         AlertGenerator(session).check_and_create_alerts(it.employee_id, unified)
 
                     logger.info(f"Interaction {it.id}: {status} unified={row.unified_score} signals={row.signals_used}")
+                except IntegrityError:
+                    session.rollback()
+                    counts['skipped_duplicate'] += 1
+                    logger.warning(f"Interaction {it.id}: duplicate score row, skipped")
                 except Exception as e:
                     session.rollback()
                     counts['failed'] += 1
@@ -157,3 +209,4 @@ def process_daily_interactions(hours=24, rescore_ids=None):
             return {'status': 'error', 'message': str(e), **counts}
         finally:
             session.close()
+            _release_batch_lock(lock_token)

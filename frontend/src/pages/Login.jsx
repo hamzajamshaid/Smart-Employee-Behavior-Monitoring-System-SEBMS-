@@ -195,9 +195,9 @@ export default function Login() {
             </label>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
               {[
-                { role: 'Admin', username: 'admin', password: 'admin123' },
-                { role: 'Employee', username: 'EMP001', password: 'password' },
-                { role: 'Customer', username: '03001234567', password: 'password' }
+                { role: 'Admin', username: 'admin' },
+                { role: 'Employee', username: 'EMP001' },
+                { role: 'Customer', username: '03001234567' }
               ].map(item => (
                 <button
                   key={item.role}
@@ -205,7 +205,6 @@ export default function Login() {
                   onClick={() => {
                     setRole(item.role);
                     setUsername(item.username);
-                    setPassword(item.password);
                     setError('');
                   }}
                   style={{
@@ -284,11 +283,11 @@ export default function Login() {
           fontSize: '12px',
           color: '#0052cc'
         }}>
-          <p style={{ margin: '0 0 8px 0', fontWeight: '700' }}>Demo Credentials:</p>
+          <p style={{ margin: '0 0 8px 0', fontWeight: '700' }}>Demo usernames (ask your administrator for passwords):</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <div>👤 <strong>Admin:</strong> <code style={{ background: '#fff', padding: '1px 4px', borderRadius: '3px', fontFamily: 'monospace' }}>admin</code> / <code style={{ background: '#fff', padding: '1px 4px', borderRadius: '3px', fontFamily: 'monospace' }}>admin123</code></div>
-            <div>👨‍💼 <strong>Employee:</strong> <code style={{ background: '#fff', padding: '1px 4px', borderRadius: '3px', fontFamily: 'monospace' }}>EMP001</code> / <code style={{ background: '#fff', padding: '1px 4px', borderRadius: '3px', fontFamily: 'monospace' }}>password</code></div>
-            <div>👤 <strong>Customer:</strong> <code style={{ background: '#fff', padding: '1px 4px', borderRadius: '3px', fontFamily: 'monospace' }}>03001234567</code> / <code style={{ background: '#fff', padding: '1px 4px', borderRadius: '3px', fontFamily: 'monospace' }}>password</code></div>
+            <div>👤 <strong>Admin:</strong> <code style={{ background: '#fff', padding: '1px 4px', borderRadius: '3px', fontFamily: 'monospace' }}>admin</code></div>
+            <div>👨‍💼 <strong>Employee:</strong> <code style={{ background: '#fff', padding: '1px 4px', borderRadius: '3px', fontFamily: 'monospace' }}>EMP001</code></div>
+            <div>👤 <strong>Customer:</strong> <code style={{ background: '#fff', padding: '1px 4px', borderRadius: '3px', fontFamily: 'monospace' }}>03001234567</code></div>
           </div>
         </div>
       </div>

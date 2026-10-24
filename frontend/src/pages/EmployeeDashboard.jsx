@@ -21,6 +21,8 @@ const cardStyle = { background: '#fff', borderRadius: '10px', padding: '24px', b
 const STATUS_STYLE = {
   scored: ['#00a86b', 'Scored'],
   insufficient_signals: ['#ff9500', 'Insufficient'],
+  no_presence: ['#6b7280', 'No person'],
+  detector_miss: ['#7c3aed', 'Detector miss'],
   failed: ['#e53935', 'Failed'],
   not_processed: ['#999', 'Not processed'],
   in_progress: ['#0052cc', 'In progress'],
