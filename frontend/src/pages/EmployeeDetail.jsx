@@ -50,7 +50,7 @@ export default function EmployeeDetail() {
     return <div className="px-3 py-3 text-center"><p className="text-danger">Employee not found</p></div>
   }
 
-  const scoreColor = employee.unified_score >= 80 ? '#10b981' : employee.unified_score >= 65 ? '#f59e0b' : '#ef4444'
+  const scoreColor = employee.unified_score == null ? '#9ca3af' : employee.unified_score >= 80 ? '#10b981' : employee.unified_score >= 65 ? '#f59e0b' : '#ef4444'
   
   const metrics = [
     { label: 'Presence Rate', value: `${employee.avg_presence || 0}%`, target: '≥ 90%', status: (employee.avg_presence || 0) >= 90 ? 'success' : 'warning' },
@@ -75,7 +75,7 @@ export default function EmployeeDetail() {
           <p className="text-muted" style={{ margin: 0, fontSize: '13px' }}>Code: {employee.employee_code} | Counter: {employee.counter_id} | {employee.status}</p>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: '36px', fontWeight: '700', color: scoreColor }}>{employee.unified_score || 0}</div>
+          <div style={{ fontSize: '36px', fontWeight: '700', color: scoreColor }}>{employee.unified_score == null ? '—' : Math.round(employee.unified_score)}</div>
           <p className="text-muted" style={{ margin: 0, fontSize: '11px' }}>Overall Score</p>
         </div>
       </div>

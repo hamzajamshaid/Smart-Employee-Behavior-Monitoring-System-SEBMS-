@@ -8,6 +8,11 @@ import string
 
 employees_bp = Blueprint('employees', __name__)
 
+
+def _r1(v):
+    """Round to 1 dp, passing None through (gated or missing scores are not zero)."""
+    return None if v is None else round(v, 1)
+
 def _admin_only():
     """Refuse unless the token carries the Admin role (checked before any DB access)."""
     from flask_jwt_extended import get_jwt
@@ -143,7 +148,7 @@ def get_employees():
                     'email': e.email,
                     'phone': e.phone,
                     'hire_date': e.hire_date.isoformat() if e.hire_date else None,
-                    'unified_score': round(latest_score.unified_score, 1) if latest_score else 0,
+                    'unified_score': _r1(latest_score.unified_score) if latest_score else 0,
                     'total_interactions': total_interactions
                 })
             
@@ -193,10 +198,10 @@ def get_employee_detail(employee_id):
             for s in scores:
                 trend.append({
                     'date': s.date.strftime('%Y-%m-%d') if s.date else None,
-                    'score': round(s.unified_score, 1)
+                    'score': _r1(s.unified_score)
                 })
             
-            latest_score = round(scores[-1].unified_score, 1) if scores else 0
+            latest_score = _r1(scores[-1].unified_score) if scores else 0
             
             return jsonify({
                 'id': employee.id,
