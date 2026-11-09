@@ -56,16 +56,18 @@ class MLExecutor:
             "r = m.PresenceDetector().detect_presence(" + vp + ")\n"
             "print('RESULT:' + json.dumps(r, default=str))\n"
         )
+        p = self._run_child(presence_py, presence_script, 'presence')
+        allowed = p['data'].get('face_frames') if p['ok'] and p['data'] else None
+        AF = json.dumps(allowed)
         emotion_script = (
             "import json, importlib.util\n"
             "spec = importlib.util.spec_from_file_location('ea', " + json.dumps(ea_path) + ")\n"
             "m = importlib.util.module_from_spec(spec)\n"
             "spec.loader.exec_module(m)\n"
-            "r = m.EmotionAnalyzer().analyze_emotions(" + vp + ")\n"
+            "r = m.EmotionAnalyzer().analyze_emotions(" + vp + ", allowed_frames=" + AF + ")\n"
             "print('RESULT:' + json.dumps(r, default=str))\n"
         )
 
-        p = self._run_child(presence_py, presence_script, 'presence')
         if p['ok'] and p['data'].get('presence_score') is not None:
             presence = {'status': 'ok', 'presence_score': float(p['data']['presence_score']),
                         'is_present': p['data'].get('is_present')}

@@ -26,6 +26,7 @@ class PresenceDetector:
             frames_with_face = 0
             total_frames = 0
             confidences = []
+            face_frames = []
             
             frame_index = 0
             while cap.isOpened():
@@ -41,11 +42,12 @@ class PresenceDetector:
                 kept = [d for d in (results.detections or []) if d.score[0] >= confidence_threshold]
                 if kept:
                     frames_with_face += 1
+                    face_frames.append(frame_index)
                     confidences.extend(d.score[0] for d in kept)
             
             cap.release()
             presence_score = (frames_with_face / max(total_frames, 1)) * 100
-            return {'status': 'ok', 'presence_score': round(presence_score, 2), 'is_present': presence_score >= 70}
+            return {'status': 'ok', 'presence_score': round(presence_score, 2), 'is_present': presence_score >= 70, 'face_frames': face_frames}
         except Exception as e:
             logger.error(f"Presence detection error: {str(e)}")
             return {'status': 'error', 'presence_score': None, 'is_present': None, 'error': str(e)}

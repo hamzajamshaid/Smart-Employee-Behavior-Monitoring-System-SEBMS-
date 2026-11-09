@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from celery import shared_task
 
 from app.config.constants import SCORE_WEIGHTS, ALERT_UNIFIED_SCORE_THRESHOLD
+from app.services.transcriber import Transcriber
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +33,18 @@ _LOCK_KEY = 'sebms:batch_lock'
 _LOCK_TTL = 3 * 60 * 60  # seconds; longer than the task time limit
 _RELEASE_LUA = ("if redis.call('get', KEYS[1]) == ARGV[1] then "
                 "return redis.call('del', KEYS[1]) else return 0 end")
+
+
+def _emotion_model_version():
+    import hashlib
+    if os.environ.get('EMOTION_BACKEND', 'deepface') == 'resnet50_3g':
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'ml_models', 'resnet50_3g_finetuned.keras')
+        h = hashlib.sha256()
+        with open(path, 'rb') as f:
+            for chunk in iter(lambda: f.read(1 << 20), b''):
+                h.update(chunk)
+        return 'resnet50_3g_finetuned@sha256:' + h.hexdigest()[:12]
+    return 'deepface-emotion'
 
 
 def _redis():
@@ -100,7 +113,9 @@ def process_daily_interactions(hours=24, rescore_ids=None):
 
             ml = MLExecutor()
             voice = VoiceAnalyzer()
+            transcriber = Transcriber()
             fm = get_file_manager()
+            model_version = _emotion_model_version()
 
             for it in interactions:
                 existing = session.query(BehavioralScore).filter(
@@ -140,6 +155,16 @@ def process_daily_interactions(hours=24, rescore_ids=None):
                     elif 'voice' not in errors:
                         errors['voice'] = 'no_audio_file'
 
+                    # Transcription: informational only, not part of the fused score
+                    transcript, transcript_language = None, None
+                    if os.path.exists(audio_path):
+                        tr = transcriber.transcribe(audio_path)
+                        if tr.get('status') == 'ok':
+                            transcript = tr.get('transcript')
+                            transcript_language = tr.get('language')
+                        else:
+                            errors['transcript'] = tr.get('error') or tr.get('status', 'unknown')
+
                     # Response time: measured from stored events, NOT fused yet.
                     # No validated 0-100 scoring rule exists; fusion waits for Phase 8.
                     rt = session.query(ResponseTimeRecord).filter(
@@ -161,6 +186,8 @@ def process_daily_interactions(hours=24, rescore_ids=None):
                         unified = None
                         status = 'no_presence'
                         errors['gate'] = f"presence {signals['presence']} below {PRESENCE_MIN}"
+                        signals.pop('emotion', None)
+                        errors['emotion'] = 'dropped: presence gate'
                     else:
                         unified = _fuse(signals)
                         status = 'scored' if unified is not None else 'insufficient_signals'
@@ -176,13 +203,17 @@ def process_daily_interactions(hours=24, rescore_ids=None):
                         voice_score=signals.get('voice'),
                         unified_score=round(unified, 2) if unified is not None else None,
                         signals_used=','.join(sorted(signals)) or None,
+                        transcript=transcript,
+                        transcript_language=transcript_language,
                         score_status=status,
                         error_details=json.dumps(errors),
+                        model_version=model_version,
                     )
                     if existing is not None:
                         for col in ('employee_id', 'date', 'presence_score', 'emotion_score',
                                     'response_score', 'feedback_score', 'voice_score',
-                                    'unified_score', 'signals_used', 'score_status', 'error_details'):
+                                    'unified_score', 'signals_used', 'transcript', 'transcript_language',
+                                    'score_status', 'error_details', 'model_version'):
                             setattr(existing, col, getattr(row, col))
                         row = existing
                     else:

@@ -151,6 +151,9 @@ class BehavioralScore(Base):
     unified_score = Column(Float, nullable=True)  # Weighted average
     interaction_id = Column(Integer, nullable=True, unique=True)
     signals_used = Column(String(200), nullable=True)
+    transcript = Column(Text, nullable=True)  # Whisper output, informational, not fused
+    transcript_language = Column(String(10), nullable=True)
+    model_version = Column(String(80), nullable=True)
     score_status = Column(String(30), nullable=True)
     error_details = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
