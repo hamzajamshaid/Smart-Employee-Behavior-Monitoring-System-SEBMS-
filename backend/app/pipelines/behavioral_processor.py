@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from celery import shared_task
 
 from app.config.constants import SCORE_WEIGHTS, ALERT_UNIFIED_SCORE_THRESHOLD
+from app.services.scoring_weights import scoring_weights_fraction, build_breakdown
 from app.services.transcriber import Transcriber
 
 logger = logging.getLogger(__name__)
@@ -71,12 +72,13 @@ def _release_batch_lock(token):
         logger.error(f"Batch lock release failed: {e}")
 
 
-def _fuse(signals):
+def _fuse(signals, weights=None):
     """Weighted average over available signals only. Returns None if not scorable."""
+    weights = weights or SCORE_WEIGHTS
     if 'presence' not in signals or len(signals) < MIN_SIGNALS_FOR_SCORE:
         return None
-    total_w = sum(SCORE_WEIGHTS[k] for k in signals)
-    return sum(SCORE_WEIGHTS[k] * v for k, v in signals.items()) / total_w
+    total_w = sum(weights[k] for k in signals)
+    return sum(weights[k] * v for k, v in signals.items()) / total_w
 
 
 @shared_task
@@ -177,7 +179,13 @@ def process_daily_interactions(hours=24, rescore_ids=None):
                         rt.response_seconds = rt_res['response_seconds']
                         rt.status = rt_res['status']
                     errors['response'] = f"{rt_res['status']}: {rt_res.get('error') or 'measured, not fused'}"
-                    errors['feedback'] = 'not_implemented'
+                    from app.models import CustomerFeedback
+                    fb = session.query(CustomerFeedback).filter(CustomerFeedback.interaction_id == it.id).first()
+                    if fb is not None and fb.star_rating is not None:
+                        signals['feedback'] = round(float(fb.star_rating) / 5 * 100, 2)
+                        errors['feedback'] = 'rated'
+                    else:
+                        errors['feedback'] = 'no_rating'
 
                     # Presence gate: no person in frame means voice/expression are not
                     # a performance measure, so no unified score is produced.
@@ -189,7 +197,7 @@ def process_daily_interactions(hours=24, rescore_ids=None):
                         signals.pop('emotion', None)
                         errors['emotion'] = 'dropped: presence gate'
                     else:
-                        unified = _fuse(signals)
+                        unified = _fuse(signals, scoring_weights_fraction(session))
                         status = 'scored' if unified is not None else 'insufficient_signals'
 
                     row = BehavioralScore(
@@ -202,6 +210,7 @@ def process_daily_interactions(hours=24, rescore_ids=None):
                         feedback_score=None,
                         voice_score=signals.get('voice'),
                         unified_score=round(unified, 2) if unified is not None else None,
+                        score_breakdown=(json.dumps(build_breakdown(signals, scoring_weights_fraction(session))) if unified is not None else None),
                         signals_used=','.join(sorted(signals)) or None,
                         transcript=transcript,
                         transcript_language=transcript_language,
@@ -212,7 +221,7 @@ def process_daily_interactions(hours=24, rescore_ids=None):
                     if existing is not None:
                         for col in ('employee_id', 'date', 'presence_score', 'emotion_score',
                                     'response_score', 'feedback_score', 'voice_score',
-                                    'unified_score', 'signals_used', 'transcript', 'transcript_language',
+                                    'unified_score', 'signals_used', 'score_breakdown', 'transcript', 'transcript_language',
                                     'score_status', 'error_details', 'model_version'):
                             setattr(existing, col, getattr(row, col))
                         row = existing

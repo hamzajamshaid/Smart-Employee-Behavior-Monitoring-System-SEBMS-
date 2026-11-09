@@ -155,6 +155,7 @@ class BehavioralScore(Base):
     transcript_language = Column(String(10), nullable=True)
     model_version = Column(String(80), nullable=True)
     score_status = Column(String(30), nullable=True)
+    score_breakdown = Column(Text, nullable=True)
     error_details = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     

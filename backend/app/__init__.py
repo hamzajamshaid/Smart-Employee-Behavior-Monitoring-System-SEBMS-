@@ -83,6 +83,10 @@ def create_app():
         app.register_blueprint(counter_bp, url_prefix='/api')
         from app.routes.feedback import feedback_api_bp
         app.register_blueprint(feedback_api_bp, url_prefix='/api')
+        from app.routes.settings import settings_bp
+        from app.routes.score_breakdown import score_breakdown_bp
+        app.register_blueprint(settings_bp, url_prefix='/api')
+        app.register_blueprint(score_breakdown_bp, url_prefix='/api')
         
         logger.info("✅ All routes registered")
     except ImportError as e:

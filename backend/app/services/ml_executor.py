@@ -58,7 +58,7 @@ class MLExecutor:
         )
         p = self._run_child(presence_py, presence_script, 'presence')
         allowed = p['data'].get('face_frames') if p['ok'] and p['data'] else None
-        AF = json.dumps(allowed)
+        AF = repr(allowed)
         emotion_script = (
             "import json, importlib.util\n"
             "spec = importlib.util.spec_from_file_location('ea', " + json.dumps(ea_path) + ")\n"

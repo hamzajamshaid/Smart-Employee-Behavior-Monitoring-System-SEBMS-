@@ -1,3 +1,5 @@
+import ScoreBreakdownModal from '../components/ScoreBreakdownModal'
+import { createPortal } from 'react-dom'
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import API_BASE from '../config'
@@ -68,6 +70,42 @@ export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState('')
   const [customerQuery, setCustomerQuery] = useState('')
   const [batchMsg, setBatchMsg] = useState('')
+  const [detailPhone, setDetailPhone] = useState(null)
+  const [breakdownId, setBreakdownId] = useState(null)
+  const [doneId, setDoneId] = useState(null)
+  const [job, setJob] = useState(null)
+  const PROCESS_SECONDS = 90
+  const customerQ = customerQuery.trim().toLowerCase()
+  const customerDigits = customerQuery.replace(/\D/g, '')
+  const customerRows = interactions.filter(i => i.customer_name && (!customerQ || i.customer_name.toLowerCase().includes(customerQ) || (customerDigits.length > 0 && (i.customer_phone || '').includes(customerDigits)))).slice(0, 100)
+  const refreshInteractions = () => {
+    axios.get(`${API_BASE}/api/dashboard/interactions${buildParams()}`, { headers })
+      .then(res => setInteractions((Array.isArray(res.data) ? res.data : []).map(mapInteraction)))
+      .catch(() => {})
+  }
+  const startProcess = (id) => {
+    setDoneId(null)
+    setJob({ id, left: PROCESS_SECONDS })
+    runBatch([id])
+  }
+  const processButton = (id, small = false) => {
+    const base = { padding: small ? '6px 10px' : '10px 16px', borderRadius: '6px', border: 'none', fontWeight: 600, fontSize: small ? '12px' : '13px', color: '#fff', whiteSpace: 'nowrap' }
+    if (job && job.id === id) return <button disabled style={{ ...base, background: '#8fa8d8', cursor: 'not-allowed' }}>Processing… {job.left}s</button>
+    if (doneId === id) return <button onClick={() => startProcess(id)} disabled={job !== null} style={{ ...base, background: '#16a34a', cursor: job !== null ? 'not-allowed' : 'pointer' }}>✓ Process completed</button>
+    return <button onClick={() => startProcess(id)} disabled={job !== null} style={{ ...base, background: '#0052cc', cursor: job !== null ? 'not-allowed' : 'pointer' }}>Process this session</button>
+  }
+
+  useEffect(() => {
+    if (!job) return
+    if (job.left <= 0) {
+      setDoneId(job.id)
+      setJob(null)
+      refreshInteractions()
+      return
+    }
+    const t = setTimeout(() => setJob(j => (j ? { ...j, left: j.left - 1 } : j)), 1000)
+    return () => clearTimeout(t)
+  }, [job])
 
   const runBatch = async (ids = []) => {
     try {
@@ -301,7 +339,7 @@ export default function Dashboard() {
         )}
 
         {/* Charts Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '20px', marginBottom: '12px' }}>
           {/* Score Trend */}
           <div className="card-hover" style={cardStyle}>
             <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#0052cc', marginBottom: '14px', marginTop: 0 }}>📈 Score Trend</h3>
@@ -320,35 +358,6 @@ export default function Dashboard() {
             )}
           </div>
 
-          {/* Customer search */}
-          <div className="card-hover" style={{ ...cardStyle, marginBottom: '16px' }}>
-            <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#0052cc', marginTop: 0, marginBottom: '10px' }}>🔎 Find a customer</h3>
-            <input
-              type="text"
-              value={customerQuery}
-              onChange={e => setCustomerQuery(e.target.value)}
-              placeholder="Customer name or phone number"
-              style={{ width: '100%', padding: '10px 12px', border: '1px solid #0052cc', borderRadius: '6px', fontSize: '13px', boxSizing: 'border-box' }}
-            />
-            {customerQuery.trim() && (
-              <div style={{ marginTop: '10px' }}>
-                {interactions.filter(i => {
-                  const q = customerQuery.trim().toLowerCase()
-                  const digits = customerQuery.replace(/\D/g, '')
-                  return (i.customer_name || '').toLowerCase().includes(q) || (digits.length > 0 && (i.customer_phone || '').includes(digits))
-                }).slice(0, 10).map(i => (
-                  <div key={i.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', padding: '10px', border: '1px solid #e8e8e8', borderRadius: '6px', marginBottom: '6px', fontSize: '13px' }}>
-                    <div>
-                      <strong>{i.customer_name}</strong> · {i.customer_phone} · session #{i.id} · {i.employee_name} · {i.feedback ? `${i.feedback}★` : 'no rating'} · {i.processing_status}
-                      {i.comment && <div style={{ color: '#555', fontStyle: 'italic', marginTop: '4px' }}>"{i.comment}"</div>}
-                    </div>
-                    <button onClick={() => runBatch([i.id])} style={{ padding: '8px 12px', borderRadius: '6px', border: 'none', background: '#0052cc', color: '#fff', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>Process this session</button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
           {/* Recent Interactions */}
           <div className="card-hover" style={cardStyle}>
             <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#0052cc', marginBottom: '6px', marginTop: 0 }}>📋 Recent Interactions</h3>
@@ -357,7 +366,7 @@ export default function Dashboard() {
               <table style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse' }}>
                 <thead style={{ position: 'sticky', top: 0, background: '#e8f0ff', zIndex: 10 }}>
                   <tr style={{ borderBottom: '2px solid #0052cc' }}>
-                    {['Employee', 'Time', 'Presence score', 'Expression (exp.)', 'Voice (exp.)', 'Response', 'Rating', 'QR'].map(h => (
+                    {['Session', 'Employee', 'Time', 'Presence score', 'Expression (exp.)', 'Voice (exp.)', 'Response', 'Rating', 'QR'].map(h => (
                       <th key={h} style={{ textAlign: h === 'Employee' ? 'left' : 'center', padding: '10px 8px', color: '#0052cc', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
                         {h}
                       </th>
@@ -373,6 +382,7 @@ export default function Dashboard() {
                         onMouseEnter={e => e.currentTarget.style.background = '#e8f0ff'} 
                         onMouseLeave={e => e.currentTarget.style.background = idx % 2 === 0 ? '#fafbfc' : '#fff'}
                       >
+                        <td onClick={() => setSelectedInteraction(i)} style={{ padding: '10px 8px', textAlign: 'center', color: '#0052cc', fontWeight: '700', fontSize: '11px', cursor: 'pointer' }}>#{i.id}</td>
                         <td onClick={() => setSelectedInteraction(i)} style={{ padding: '10px 8px', color: '#1a1a1a', fontWeight: '600', cursor: 'pointer' }}>{i.employee_name || 'N/A'}</td>
                         <td onClick={() => setSelectedInteraction(i)} style={{ padding: '10px 8px', textAlign: 'center', color: '#555', fontSize: '11px', cursor: 'pointer' }}>{i.time || '—'}</td>
                         <td onClick={() => setSelectedInteraction(i)} style={{ padding: '10px 8px', textAlign: 'center', color: '#1a1a1a', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}>{i.status === 'insufficient_signals' ? '—' : fmtNum(i.presence_score)}<br />{statusBadge(i.status)}</td>
@@ -423,6 +433,36 @@ export default function Dashboard() {
                 </tbody>
               </table>
             </div>
+          </div>
+        </div>
+
+        {/* Find a customer */}
+        <div className="card-hover" style={{ ...cardStyle, marginTop: '12px' }}>
+          <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#0052cc', marginBottom: '14px', marginTop: 0 }}>🔎 Find a customer</h3>
+          <input
+            type="text"
+            value={customerQuery}
+            onChange={e => setCustomerQuery(e.target.value)}
+            placeholder="Customer name or phone number"
+            style={{ width: '100%', padding: '10px 12px', border: '1px solid #0052cc', borderRadius: '6px', fontSize: '13px', boxSizing: 'border-box', marginBottom: '12px' }}
+          />
+          <p style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>{customerQuery.trim() ? `${customerRows.length} match(es)` : 'Recent customers, newest first'}</p>
+          <div style={{ maxHeight: '320px', overflowY: 'auto', border: '1px solid #e8e8e8', borderRadius: '6px' }}>
+            {customerRows.length === 0 && (
+              <div style={{ padding: '16px', color: '#999', fontSize: '13px' }}>No matching customer</div>
+            )}
+            {customerRows.map(i => (
+              <div key={i.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', padding: '10px 12px', borderBottom: '1px solid #f0f0f0', fontSize: '13px' }}>
+                <div style={{ minWidth: 0 }}>
+                  <strong>{i.customer_name}</strong> · {i.customer_phone} · session #{i.id} · {i.employee_name} · {i.feedback ? `${i.feedback}★` : 'no rating'} · {i.processing_status}
+                  {i.comment && <div style={{ color: '#555', fontStyle: 'italic', marginTop: '4px' }}>"{i.comment}"</div>}
+                </div>
+                <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                  <button onClick={() => setDetailPhone(i.customer_phone)} style={btnStyle(false)}>Detail analysis</button>
+                  {processButton(i.id)}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -493,6 +533,63 @@ export default function Dashboard() {
           }} />
         </>
       )}
+      {detailPhone && createPortal(
+        <div onClick={() => setDetailPhone(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: '10px', padding: '24px', width: 'min(1200px, 100%)', boxSizing: 'border-box', margin: 'auto', maxHeight: '85vh', overflowY: 'auto', boxShadow: '0 10px 40px rgba(0,0,0,0.25)' }}>
+            {(() => {
+              const rows = interactions.filter(i => i.customer_phone === detailPhone)
+              const name = rows[0]?.customer_name || 'Customer'
+              const rated = rows.filter(r => r.feedback)
+              const avgRating = rated.length ? (rated.reduce((sum, r) => sum + r.feedback, 0) / rated.length).toFixed(1) : '—'
+              const th = { textAlign: 'left', padding: '8px', fontSize: '12px', color: '#0052cc', borderBottom: '2px solid #0052cc', whiteSpace: 'nowrap' }
+              const td = { padding: '8px', fontSize: '12px', color: '#333', borderBottom: '1px solid #eee', verticalAlign: 'top' }
+              return (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', gap: '12px' }}>
+                    <div>
+                      <h3 style={{ margin: 0, color: '#0052cc', fontSize: '20px' }}>{name}</h3>
+                      <div style={{ fontSize: '13px', color: '#555', marginTop: '4px' }}>{detailPhone} · {rows.length} session(s) · avg rating {avgRating}★</div>
+                    </div>
+                    <button onClick={() => setDetailPhone(null)} style={btnStyle(false)}>Close</button>
+                  </div>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', minWidth: '1200px', borderCollapse: 'collapse' }}>
+                      <thead>
+                        <tr>
+                          {['Session', 'Date & time', 'Employee', 'Status', 'Rating', 'Comment', 'Presence', 'Expression', 'Voice', 'Unified', 'Response', 'Missing', 'Action'].map(h => (
+                            <th key={h} style={th}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rows.map(r => (
+                          <tr key={r.id}>
+                            <td style={td}>#{r.id}</td>
+                            <td style={{ ...td, whiteSpace: 'nowrap' }}>{r.start_timestamp ? new Date(r.start_timestamp).toLocaleString() : '—'}</td>
+                            <td style={td}>{r.employee_name || '—'}</td>
+                            <td style={td}>{r.processing_status || '—'}</td>
+                            <td style={td}>{r.feedback ? `${r.feedback}★` : '—'}</td>
+                            <td style={{ ...td, maxWidth: '200px' }}>{r.comment ? `"${r.comment}"` : '—'}</td>
+                            <td style={td}>{r.presence_score ?? '—'}</td>
+                            <td style={td}>{r.emotion_score ?? '—'}</td>
+                            <td style={td}>{r.voice_score ?? '—'}</td>
+                            <td style={td}><span onClick={() => r.unified_score != null && setBreakdownId(r.id)} style={{ cursor: r.unified_score != null ? 'pointer' : 'default', color: '#0052cc', fontWeight: '700', textDecoration: r.unified_score != null ? 'underline' : 'none' }}>{r.unified_score ?? '—'}</span></td>
+                            <td style={td}>{r.response_seconds != null ? `${r.response_seconds}s` : '—'}</td>
+                            <td style={td}>{Object.keys(r.missing_reasons || {}).join(', ') || '—'}</td>
+                            <td style={td}>{processButton(r.id, true)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )
+            })()}
+          </div>
+        </div>,
+        document.body
+      )}
+      {breakdownId && <ScoreBreakdownModal interactionId={breakdownId} onClose={() => setBreakdownId(null)} />}
       {selectedInteraction && <InteractionModal interaction={selectedInteraction} onClose={() => setSelectedInteraction(null)} />}
     </div>
   )
