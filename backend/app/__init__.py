@@ -77,6 +77,12 @@ def create_app():
         app.register_blueprint(interactions_bp, url_prefix='/api')
         app.register_blueprint(batch_bp, url_prefix='/api')
         app.register_blueprint(simulate_bp, url_prefix='/api')
+        from app.routes.sensor import sensor_bp
+        app.register_blueprint(sensor_bp, url_prefix='/api')
+        from app.routes.counter import counter_bp
+        app.register_blueprint(counter_bp, url_prefix='/api')
+        from app.routes.feedback import feedback_api_bp
+        app.register_blueprint(feedback_api_bp, url_prefix='/api')
         
         logger.info("✅ All routes registered")
     except ImportError as e:

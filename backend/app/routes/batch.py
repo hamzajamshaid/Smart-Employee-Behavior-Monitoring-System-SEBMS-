@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 import logging
 import os
@@ -18,7 +18,10 @@ def trigger_batch():
         return jsonify({'error': 'Admin role required'}), 403
     """Manually trigger batch processing (task only, no import)"""
     try:
-        task = celery.send_task('app.pipelines.behavioral_processor.process_daily_interactions')
+        body = request.get_json(silent=True) or {}
+        ids = [int(i) for i in body.get('interaction_ids', []) if str(i).isdigit()]
+        kwargs = {'rescore_ids': ids} if ids else {}
+        task = celery.send_task('app.pipelines.behavioral_processor.process_daily_interactions', kwargs=kwargs)
         
         return jsonify({
             'status': 'queued',

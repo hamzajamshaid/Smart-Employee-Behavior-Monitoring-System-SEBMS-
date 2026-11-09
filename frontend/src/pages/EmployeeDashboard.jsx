@@ -54,7 +54,7 @@ const mapInteraction = r => ({
   emotion: r.emotion_score,
   voice: r.voice_score,
   response: r.response_seconds,
-  feedback: null,
+  feedback: r.feedback ?? null,
   status: r.processing_status,
 });
 
@@ -257,7 +257,7 @@ export default function EmployeeDashboard() {
                         <td style={{ padding: '10px 8px', textAlign: 'center', color: '#555', fontSize: '11px' }}>{fmtPct(i.emotion)}</td>
                         <td style={{ padding: '10px 8px', textAlign: 'center', color: voiceColor(i.voice), fontWeight: '600', fontSize: '11px' }}>{fmtPct(i.voice)}</td>
                         <td style={{ padding: '10px 8px', textAlign: 'center', color: '#555', fontSize: '11px' }}>{fmtSec(i.response)}</td>
-                        <td style={{ padding: '10px 8px', textAlign: 'center', color: '#555', fontSize: '11px' }}>{i.feedback ? `${i.feedback}★` : '—'}</td>
+                        <td onClick={() => i.feedback && window.alert('Rating: ' + i.feedback + ' star(s)\n\n' + (i.comment || 'No comment'))} style={{ padding: '10px 8px', textAlign: 'center', color: '#555', fontSize: '11px', cursor: i.feedback ? 'pointer' : 'default', textDecoration: i.feedback ? 'underline' : 'none' }}>{i.feedback ? `${i.feedback}★` : '—'}</td>
                       </tr>
                     ))
                   ) : (

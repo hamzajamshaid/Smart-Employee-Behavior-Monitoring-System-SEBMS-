@@ -24,6 +24,7 @@ export default function Sidebar({ userRole }) {
     { path: '/tickets', label: 'Tickets', icon: '🎫' },
     { path: '/admin-appointments', label: 'Appointments', icon: '📅' },
     { path: '/alerts', label: 'Alerts', icon: '🚨' },
+    { path: '/counter-workflow', label: 'Counter Workflow', icon: '🪑' },
     { path: '/reports', label: 'Reports', icon: '📈' },
     { path: '/feedback', label: 'Feedback', icon: '💬' },
     { path: '/settings', label: 'Settings', icon: '⚙️' },
@@ -35,6 +36,7 @@ export default function Sidebar({ userRole }) {
     { path: '/employee-tickets', label: 'My Tickets', icon: '🎫' },
     { path: '/attendance', label: 'Attendance', icon: '⏱️' },
     { path: '/simulate', label: 'Simulate Capture', icon: '🎬' },
+    { path: '/counter', label: 'Counter', icon: '🪑' },
   ]
 
   const customerMenuItems = [

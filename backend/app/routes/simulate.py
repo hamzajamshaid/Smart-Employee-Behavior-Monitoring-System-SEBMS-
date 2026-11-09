@@ -15,6 +15,15 @@ logger = logging.getLogger(__name__)
 
 simulate_bp = Blueprint('simulate', __name__)
 
+def _start_from_form():
+    raw = request.form.get('recording_started_at')
+    if raw:
+        try:
+            return datetime.fromisoformat(raw.replace('Z', '+00:00')).replace(tzinfo=None)
+        except ValueError:
+            pass
+    return datetime.utcnow()
+
 @simulate_bp.route('/simulate/capture', methods=['POST'])
 @jwt_required()
 def simulate_capture():
@@ -55,7 +64,7 @@ def simulate_capture():
             # 1. CREATE INTERACTION
             interaction = Interaction(
                 employee_id=employee_id,
-                start_timestamp=datetime.utcnow(),
+                start_timestamp=_start_from_form(),
                 video_file_path=None
             )
             session.add(interaction)
@@ -88,7 +97,7 @@ def simulate_capture():
             
             # 2b. RESPONSE-TIME EVENTS from manual buttons (sensor replaces this in Phase 9)
             events_raw = request.form.get('events')
-            if events_raw is not None:
+            if events_raw and events_raw.strip() not in ('', '[]'):
                 import json as _json
                 from datetime import datetime as _dt
                 from app.models import ResponseTimeRecord

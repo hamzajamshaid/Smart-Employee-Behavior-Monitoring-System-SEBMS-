@@ -196,6 +196,9 @@ class ResponseTimeRecord(Base):
     # Relationships
     interaction = relationship('Interaction', back_populates='response_time_record')
 
+from sqlalchemy import String as SAString
+
+
 class CustomerFeedback(Base):
     __tablename__ = 'customer_feedback'
     
@@ -203,6 +206,8 @@ class CustomerFeedback(Base):
     interaction_id = Column(Integer, ForeignKey('interactions.id'), nullable=False)
     star_rating = Column(Integer, default=3)  # 1-5
     comments = Column(Text, nullable=True)
+    customer_name = Column(SAString(100), nullable=True)
+    customer_phone = Column(SAString(20), nullable=True)
     
     # Relationships
     interaction = relationship('Interaction', back_populates='customer_feedback')
@@ -254,3 +259,10 @@ class ActivityLog(Base):
     action = Column(String(255), nullable=False)
     details = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+class SensorPresenceEvent(Base):
+    __tablename__ = 'sensor_presence_events'
+
+    id = Column(Integer, primary_key=True)
+    is_present = Column(Boolean, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

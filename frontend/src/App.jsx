@@ -1,3 +1,5 @@
+import CounterSession from './pages/CounterSession';
+import CounterWorkflow from './pages/CounterWorkflow';
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 
@@ -113,6 +115,7 @@ export default function App() {
           <Route path="/reports" element={<ProtectedRoute requiredRole="Admin"><Reports /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute requiredRole="Admin"><Settings /></ProtectedRoute>} />
           <Route path="/feedback" element={<ProtectedRoute requiredRole="Admin"><Feedback /></ProtectedRoute>} />
+          <Route path="/counter-workflow" element={<ProtectedRoute requiredRole="Admin"><CounterWorkflow /></ProtectedRoute>} />
 
           {/* EMPLOYEE ROUTES */}
           <Route path="/employee-dashboard" element={<ProtectedRoute requiredRole="Employee"><EmployeeDashboard /></ProtectedRoute>} />
@@ -121,6 +124,7 @@ export default function App() {
           <Route path="/employee-appointments" element={<ProtectedRoute requiredRole="Employee"><EmployeeAppointments /></ProtectedRoute>} />
           <Route path="/attendance" element={<ProtectedRoute requiredRole="Employee"><Attendance /></ProtectedRoute>} />
           <Route path="/simulate" element={<ProtectedRoute requiredRole="Employee"><SimulationCapture /></ProtectedRoute>} />
+          <Route path="/counter" element={<ProtectedRoute requiredRole="Employee"><CounterSession /></ProtectedRoute>} />
 
           {/* CUSTOMER ROUTES */}
           <Route path="/customer-dashboard" element={<ProtectedRoute requiredRole="Customer"><CustomerDashboard /></ProtectedRoute>} />

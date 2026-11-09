@@ -83,7 +83,7 @@ def dashboard_summary():
             'avg_voice': _avg([s.voice_score for s in scores]),
             # Response and feedback are not fused yet (see Phase 9 / Phase 8)
             'avg_response': None,
-            'avg_feedback': None,
+            'avg_feedback': _avg_feedback(session, start, employee_id),
         }), 200
     except Exception as e:
         return jsonify({'error': 'summary unavailable', 'detail': str(e)}), 500
@@ -112,6 +112,7 @@ def _missing_reasons(score):
 @jwt_required()
 def dashboard_interactions():
     session = current_app.SessionLocal()
+    from app.models import CustomerFeedback
     try:
         period = request.args.get('period', 'week')
         employee_id = _scoped_employee_id()
@@ -145,6 +146,10 @@ def dashboard_interactions():
                 'missing_reasons': _missing_reasons(score),
                 'response_seconds': rt.response_seconds if rt else None,
                 'response_status': rt.status if rt else 'missing_event',
+                'feedback': session.query(CustomerFeedback.star_rating).filter(CustomerFeedback.interaction_id == it.id).scalar(),
+                'comment': session.query(CustomerFeedback.comments).filter(CustomerFeedback.interaction_id == it.id).scalar(),
+                'customer_name': session.query(CustomerFeedback.customer_name).filter(CustomerFeedback.interaction_id == it.id).scalar(),
+                'customer_phone': session.query(CustomerFeedback.customer_phone).filter(CustomerFeedback.interaction_id == it.id).scalar(),
             })
         return jsonify(rows), 200
     except Exception as e:
@@ -235,3 +240,15 @@ def dashboard_performers():
         return jsonify({'error': 'performers unavailable', 'detail': str(e)}), 500
     finally:
         session.close()
+
+
+def _avg_feedback(session, start, employee_id):
+    from app.models import CustomerFeedback
+    q = session.query(CustomerFeedback.star_rating).join(
+        Interaction, CustomerFeedback.interaction_id == Interaction.id)
+    if start:
+        q = q.filter(Interaction.start_timestamp >= start)
+    if employee_id:
+        q = q.filter(Interaction.employee_id == employee_id)
+    vals = [r[0] for r in q.all() if r[0] is not None]
+    return round(sum(vals) / len(vals), 1) if vals else None
