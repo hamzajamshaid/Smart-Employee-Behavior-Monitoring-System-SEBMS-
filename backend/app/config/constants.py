@@ -3,7 +3,7 @@
 # ============================================================================
 
 # Behavioral Module Thresholds
-PRESENCE_THRESHOLD = 70.0  # Minimum acceptable presence score
+PRESENCE_THRESHOLD = 50.0  # Minimum acceptable presence score
 EMOTION_THRESHOLD = 65.0   # Minimum acceptable emotion score
 RESPONSE_THRESHOLD = 15.0  # Maximum acceptable response time (seconds)
 FEEDBACK_THRESHOLD = 3.0   # Minimum acceptable customer feedback rating
@@ -42,3 +42,7 @@ WHISPER_MODEL = 'base'
 # Trigger Modes
 TRIGGER_MODE = 'manual'  # 'manual', 'simulated', 'arduino'
 
+
+
+# Red-flag words highlighted in transcripts (admin Voice view). Lowercase, single words.
+RED_FLAG_WORDS = {'idiot', 'stupid', 'useless', 'rude', 'nonsense', 'liar', 'worst', 'ridiculous', 'pathetic', 'hate', 'bakwas', 'bakwaas', 'bewaqoof', 'bewakoof', 'ghatiya', 'bekar', 'nalayak', 'jhoota', 'jhootha', 'kameena', 'ahmaq', 'بکواس', 'بکواص', 'بکواصے', 'بکواسی', 'بیوقوف', 'گھٹیا', 'بیکار', 'بکار', 'نالائق', 'جھوٹا', 'کمینہ', 'احمق'}

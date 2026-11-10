@@ -72,9 +72,8 @@ export default function Dashboard() {
   const [batchMsg, setBatchMsg] = useState('')
   const [detailPhone, setDetailPhone] = useState(null)
   const [breakdownId, setBreakdownId] = useState(null)
-  const [doneId, setDoneId] = useState(null)
-  const [job, setJob] = useState(null)
-  const PROCESS_SECONDS = 90
+  const [running, setRunning] = useState(() => JSON.parse(localStorage.getItem('sebms:jobs:v2') || '{}'))
+  const [, setNow] = useState(0)
   const customerQ = customerQuery.trim().toLowerCase()
   const customerDigits = customerQuery.replace(/\D/g, '')
   const customerRows = interactions.filter(i => i.customer_name && (!customerQ || i.customer_name.toLowerCase().includes(customerQ) || (customerDigits.length > 0 && (i.customer_phone || '').includes(customerDigits)))).slice(0, 100)
@@ -83,39 +82,81 @@ export default function Dashboard() {
       .then(res => setInteractions((Array.isArray(res.data) ? res.data : []).map(mapInteraction)))
       .catch(() => {})
   }
-  const startProcess = (id) => {
-    setDoneId(null)
-    setJob({ id, left: PROCESS_SECONDS })
-    runBatch([id])
+  useEffect(() => {
+    if (Object.keys(running).length === 0) return
+    const t = setInterval(() => setNow(n => n + 1), 1000)
+    return () => clearInterval(t)
+  }, [running])
+  const updateRunning = (fn) => setRunning(prev => {
+    const next = fn(prev)
+    localStorage.setItem('sebms:jobs:v2', JSON.stringify(next))
+    return next
+  })
+  const startProcess = async (id) => {
+    const taskId = await runBatch([id])
+    if (taskId) updateRunning(prev => ({ ...prev, [id]: { taskId, at: Date.now() } }))
   }
-  const processButton = (id, small = false) => {
+  const processButton = (row, small = false) => {
+    const id = row.id
+    const busy = Object.keys(running).length > 0
     const base = { padding: small ? '6px 10px' : '10px 16px', borderRadius: '6px', border: 'none', fontWeight: 600, fontSize: small ? '12px' : '13px', color: '#fff', whiteSpace: 'nowrap' }
-    if (job && job.id === id) return <button disabled style={{ ...base, background: '#8fa8d8', cursor: 'not-allowed' }}>Processing… {job.left}s</button>
-    if (doneId === id) return <button onClick={() => startProcess(id)} disabled={job !== null} style={{ ...base, background: '#16a34a', cursor: job !== null ? 'not-allowed' : 'pointer' }}>✓ Process completed</button>
-    return <button onClick={() => startProcess(id)} disabled={job !== null} style={{ ...base, background: '#0052cc', cursor: job !== null ? 'not-allowed' : 'pointer' }}>Process this session</button>
+    if (running[id]) {
+      const hist = JSON.parse(localStorage.getItem('sebms:durations') || '[]')
+      const expected = hist.length ? Math.round(hist.reduce((a, b) => a + b, 0) / hist.length) : 60
+      const left = expected - Math.max(0, Math.round((Date.now() - running[id].at) / 1000))
+      return <button disabled style={{ ...base, background: '#8fa8d8', cursor: 'not-allowed' }}>{left > 0 ? `Processing… ${left}s` : 'Finishing…'}</button>
+    }
+    if (row.processing_status === 'scored') return <button onClick={() => startProcess(id)} disabled={busy} style={{ ...base, background: '#16a34a', cursor: busy ? 'not-allowed' : 'pointer' }}>✓ Processed</button>
+    return <button onClick={() => startProcess(id)} disabled={busy} style={{ ...base, background: '#0052cc', cursor: busy ? 'not-allowed' : 'pointer' }}>Process this session</button>
   }
 
   useEffect(() => {
-    if (!job) return
-    if (job.left <= 0) {
-      setDoneId(job.id)
-      setJob(null)
-      refreshInteractions()
-      return
-    }
-    const t = setTimeout(() => setJob(j => (j ? { ...j, left: j.left - 1 } : j)), 1000)
-    return () => clearTimeout(t)
-  }, [job])
+    const ids = Object.keys(running)
+    if (ids.length === 0) return
+    const t = setInterval(async () => {
+      for (const id of ids) {
+        const row = interactions.find(x => String(x.id) === id)
+        if (Date.now() - running[id].at > 10000 && row && row.processing_status === 'scored') {
+          updateRunning(prev => { const n = { ...prev }; delete n[id]; return n })
+          continue
+        }
+        if (Date.now() - running[id].at > 10 * 60 * 1000) {
+          updateRunning(prev => { const n = { ...prev }; delete n[id]; return n })
+          refreshInteractions()
+          continue
+        }
+        try {
+          const res = await axios.get(`${API_BASE}/api/batch/status/${running[id].taskId}`, { headers })
+          if (res.data.status === 'SUCCESS' || res.data.status === 'FAILURE') {
+            if (res.data.status === 'SUCCESS') {
+              const took = Math.round((Date.now() - running[id].at) / 1000)
+              const hist = JSON.parse(localStorage.getItem('sebms:durations') || '[]')
+              localStorage.setItem('sebms:durations', JSON.stringify([...hist, took].slice(-10)))
+            }
+            updateRunning(prev => { const n = { ...prev }; delete n[id]; return n })
+            refreshInteractions()
+          }
+        } catch (e) {
+          console.warn('Batch status check failed for session', id, e.message)
+        }
+      }
+    }, 3000)
+    return () => clearInterval(t)
+  }, [running, interactions])
 
   const runBatch = async (ids = []) => {
+    let taskId = null
     try {
       const token = localStorage.getItem('token')
-      await axios.post(`${API_BASE}/api/batch/trigger`, { interaction_ids: ids }, { headers: { Authorization: `Bearer ${token}` } })
+      const res = await axios.post(`${API_BASE}/api/batch/trigger`, { interaction_ids: ids }, { headers: { Authorization: `Bearer ${token}` } })
+      taskId = res.data.task_id || null
       setBatchMsg(ids.length ? `Session #${ids[0]} queued for processing` : 'Batch queued (last 24 hours)')
+      ;[10, 30, 60, 120, 180].forEach(sec => setTimeout(refreshInteractions, sec * 1000))
     } catch (e) {
       setBatchMsg('Batch failed: ' + (e.response?.data?.error || e.message))
     }
     setTimeout(() => setBatchMsg(''), 8000)
+    return taskId
   }
   const [showDropdown, setShowDropdown] = useState(false)
   const [topPerformers, setTopPerformers] = useState([])
@@ -459,7 +500,7 @@ export default function Dashboard() {
                 </div>
                 <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
                   <button onClick={() => setDetailPhone(i.customer_phone)} style={btnStyle(false)}>Detail analysis</button>
-                  {processButton(i.id)}
+                  {processButton(i)}
                 </div>
               </div>
             ))}
@@ -572,11 +613,11 @@ export default function Dashboard() {
                             <td style={{ ...td, maxWidth: '200px' }}>{r.comment ? `"${r.comment}"` : '—'}</td>
                             <td style={td}>{r.presence_score ?? '—'}</td>
                             <td style={td}>{r.emotion_score ?? '—'}</td>
-                            <td style={td}>{r.voice_score ?? '—'}</td>
+                            <td onClick={() => r.voice_score != null && setSelectedInteraction({ ...r, openTranscript: true })} style={{ ...td, cursor: r.voice_score != null ? 'pointer' : 'default', color: r.voice_score != null ? '#0052cc' : '#333', textDecoration: r.voice_score != null ? 'underline' : 'none', fontWeight: r.voice_score != null ? '700' : '400' }}>{r.voice_score ?? '—'}</td>
                             <td style={td}><span onClick={() => r.unified_score != null && setBreakdownId(r.id)} style={{ cursor: r.unified_score != null ? 'pointer' : 'default', color: '#0052cc', fontWeight: '700', textDecoration: r.unified_score != null ? 'underline' : 'none' }}>{r.unified_score ?? '—'}</span></td>
                             <td style={td}>{r.response_seconds != null ? `${r.response_seconds}s` : '—'}</td>
-                            <td style={td}>{Object.keys(r.missing_reasons || {}).join(', ') || '—'}</td>
-                            <td style={td}>{processButton(r.id, true)}</td>
+                            <td style={td}>{['presence', 'emotion', 'response', 'feedback', 'voice'].filter(k => !(r.signals_used || []).includes(k)).join(', ') || '—'}</td>
+                            <td style={td}>{processButton(r, true)}</td>
                           </tr>
                         ))}
                       </tbody>

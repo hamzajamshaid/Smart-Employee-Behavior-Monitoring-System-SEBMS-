@@ -193,3 +193,19 @@ _analyzer = EmotionAnalyzer()
 
 def analyze_emotions(video_path: str, allowed_frames=None) -> dict:
     return _analyzer.analyze_emotions(video_path, allowed_frames)
+
+
+def classify_frame(frame):
+    """Live single-frame expression (ResNet 3-group, same preprocessing as the batch path)."""
+    face = _face_48(frame)
+    if face is None:
+        return {'face': False}
+    probs = _load_resnet().predict(face.reshape(1, 48, 48, 1), verbose=0)[0]
+    idx = int(np.argmax(probs))
+    return {
+        'face': True,
+        'label': RESNET_LABELS[idx],
+        'probs': {name: round(float(p), 3) for name, p in zip(RESNET_LABELS, probs)},
+        'positive_pct': round(float((probs[1] + probs[2]) * 100), 1),  # neutral + positive, as in the batch score
+    }
+

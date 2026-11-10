@@ -25,6 +25,10 @@ celery_app.conf.update(
     task_track_started=True,
     task_time_limit=30 * 60,
     beat_schedule={
+        'purge-old-videos': {
+            'task': 'app.pipelines.behavioral_processor.purge_old_videos',
+            'schedule': crontab(hour=1, minute=0),  # daily 01:00 UTC, after the batch
+        },
         'process-daily-interactions': {
             'task': 'app.pipelines.behavioral_processor.process_daily_interactions',
             'schedule': crontab(hour=0, minute=0),  # every day at 00:00 UTC

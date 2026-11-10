@@ -1,9 +1,11 @@
 import json
+import re
 from flask import Blueprint, jsonify, request, current_app
 from flask_jwt_extended import jwt_required
 from datetime import datetime, timedelta
 from sqlalchemy import or_
 from app.models import BehavioralScore, Interaction, ResponseTimeRecord, Employee
+from app.config.constants import RED_FLAG_WORDS
 
 dashboard_bp = Blueprint('dashboard', __name__)
 
@@ -12,6 +14,17 @@ def _avg(values):
     """Average over real values only. Returns None (not 0) if nothing was measured."""
     vals = [v for v in values if v is not None]
     return round(sum(vals) / len(vals), 2) if vals else None
+
+
+def _find_red_flags(transcript):
+    """Red-flag words found in a transcript (lowercase, unique, in order)."""
+    if not transcript:
+        return []
+    found = []
+    for tok in re.findall(r"[\w']+", transcript.lower()):
+        if tok in RED_FLAG_WORDS and tok not in found:
+            found.append(tok)
+    return found
 
 
 def _period_start(period):
@@ -142,6 +155,9 @@ def dashboard_interactions():
                 'presence_score': score.presence_score if score else None,
                 'emotion_score': score.emotion_score if score else None,
                 'voice_score': score.voice_score if score else None,
+                'transcript': score.transcript if score else None,
+                'transcript_language': score.transcript_language if score else None,
+                'red_flags': _find_red_flags(score.transcript) if score else [],
                 'signals_used': score.signals_used.split(',') if score and score.signals_used else [],
                 'missing_reasons': _missing_reasons(score),
                 'response_seconds': rt.response_seconds if rt else None,

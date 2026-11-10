@@ -40,6 +40,11 @@ class PresenceDetector:
                 rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 results = self.face_detection.process(rgb_frame)
                 kept = [d for d in (results.detections or []) if d.score[0] >= confidence_threshold]
+                if not kept:
+                    # retry on a brightened copy: dim webcam footage can hide a visible face
+                    bright = cv2.convertScaleAbs(frame, alpha=1.5, beta=40)
+                    results = self.face_detection.process(cv2.cvtColor(bright, cv2.COLOR_BGR2RGB))
+                    kept = [d for d in (results.detections or []) if d.score[0] >= confidence_threshold]
                 if kept:
                     frames_with_face += 1
                     face_frames.append(frame_index)
@@ -47,7 +52,7 @@ class PresenceDetector:
             
             cap.release()
             presence_score = (frames_with_face / max(total_frames, 1)) * 100
-            return {'status': 'ok', 'presence_score': round(presence_score, 2), 'is_present': presence_score >= 70, 'face_frames': face_frames}
+            return {'status': 'ok', 'presence_score': round(presence_score, 2), 'is_present': presence_score >= 50, 'face_frames': face_frames}
         except Exception as e:
             logger.error(f"Presence detection error: {str(e)}")
             return {'status': 'error', 'presence_score': None, 'is_present': None, 'error': str(e)}

@@ -1,10 +1,14 @@
 import json
+from datetime import datetime
 from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt
 from sqlalchemy import text
 from app.services.scoring_weights import DEFAULT_UI_WEIGHTS, ensure_settings_table, load_settings
+from app.services.video_retention import delete_videos
 
 settings_bp = Blueprint('settings_api', __name__)
+
+ALERT_LEVELS = ('low', 'medium', 'high')
 
 DEFAULTS = {
     'companyName': 'Honda Breeze',
@@ -13,6 +17,7 @@ DEFAULTS = {
     'detectionThresholds': {'presenceTarget': 90, 'responseTimeLimit': 15,
                             'emotionPositiveRatio': 70, 'feedbackMinimum': 3.5},
     'alertSensitivity': 'medium',
+    'retentionDays': 0,
     'batchProcessingInterval': 24,
 }
 
@@ -50,7 +55,20 @@ def put_settings():
     total = sum(vals.values())
     if abs(total - 100) > 0.01:
         return jsonify({'error': f'Weights must total 100 (currently {total:g})'}), 400
+
+    sensitivity = data.get('alertSensitivity', DEFAULTS['alertSensitivity'])
+    if sensitivity not in ALERT_LEVELS:
+        return jsonify({'error': 'alertSensitivity must be low, medium or high'}), 400
+    try:
+        retention = int(data.get('retentionDays', DEFAULTS['retentionDays']))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'retentionDays must be a whole number'}), 400
+    if retention < 0 or retention > 3650:
+        return jsonify({'error': 'retentionDays must be between 0 and 3650'}), 400
+
     data['scoringWeights'] = vals
+    data['alertSensitivity'] = sensitivity
+    data['retentionDays'] = retention
     session = current_app.SessionLocal()
     try:
         ensure_settings_table(session)
@@ -60,6 +78,27 @@ def put_settings():
         ), {'v': json.dumps(data)})
         session.commit()
         return jsonify(_merge(data)), 200
+    except Exception as e:
+        session.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        session.close()
+
+
+@settings_bp.route('/settings/delete-videos', methods=['POST'])
+@jwt_required()
+def delete_videos_on_date():
+    if get_jwt().get('role') != 'Admin':
+        return jsonify({'error': 'Admin only'}), 403
+    raw = (request.get_json(silent=True) or {}).get('date', '')
+    try:
+        day = datetime.strptime(raw, '%Y-%m-%d').date()
+    except (TypeError, ValueError):
+        return jsonify({'error': 'date must be YYYY-MM-DD'}), 400
+    session = current_app.SessionLocal()
+    try:
+        result = delete_videos(session, on_date=day)
+        return jsonify({'date': raw, **result}), 200
     except Exception as e:
         session.rollback()
         return jsonify({'error': str(e)}), 500

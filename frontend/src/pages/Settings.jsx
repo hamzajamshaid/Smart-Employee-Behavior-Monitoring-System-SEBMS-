@@ -28,6 +28,7 @@ export default function Settings() {
       feedbackMinimum: 3.5
     },
     alertSensitivity: 'medium',
+    retentionDays: 0,
     batchProcessingInterval: 24
   });
 
@@ -78,6 +79,23 @@ export default function Settings() {
       ...prev,
       detectionThresholds: { ...prev.detectionThresholds, [key]: parseFloat(value) || 0 }
     }));
+  };
+
+  const [deleteDate, setDeleteDate] = useState('');
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeleteVideos = async () => {
+    if (!deleteDate) { alert('Pick a date first'); return; }
+    if (!window.confirm(`Delete all recorded videos from ${deleteDate}? Scores are kept.`)) return;
+    try {
+      setDeleting(true);
+      const res = await axios.post(`${API_BASE}/api/settings/delete-videos`, { date: deleteDate }, { headers });
+      alert(`Deleted ${res.data.files_removed} files from ${res.data.interactions_cleared} interactions.`);
+    } catch (err) {
+      alert('Error: ' + (err.response?.data?.error || 'Failed to delete videos'));
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const totalWeight = Object.values(settings.scoringWeights).reduce((a, b) => a + b, 0);
@@ -166,7 +184,7 @@ export default function Settings() {
               { key: 'faceEmotion', label: 'Face Emotion Score', description: 'Facial expression analysis (happiness, stress)' },
               { key: 'responseTime', label: 'Response Time Score', description: 'Time taken to respond to customer' },
               { key: 'customerFeedback', label: 'Customer Feedback Score', description: 'Direct customer ratings (1-5 stars)' },
-              { key: 'voiceEmotion', label: 'Voice Emotion Score', description: 'Vocal tone and emotional delivery (optional)' }
+              { key: 'voiceEmotion', label: 'Voice Transcript Sentiment', description: 'Sentiment of the transcribed speech (optional)' }
             ].map(item => (
               <div key={item.key} style={{ background: '#f9fafb', borderRadius: '8px', padding: '16px', border: '1px solid #e8e8e8' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
@@ -245,9 +263,9 @@ export default function Settings() {
 
           <div style={{ display: 'flex', gap: '12px' }}>
             {[
-              { value: 'low', label: 'Low', desc: 'Only critical alerts' },
-              { value: 'medium', label: 'Medium', desc: 'Standard alerts' },
-              { value: 'high', label: 'High', desc: 'Detailed alerts' }
+              { value: 'low', label: 'Low', desc: 'Alert below 50' },
+              { value: 'medium', label: 'Medium', desc: 'Alert below 60' },
+              { value: 'high', label: 'High', desc: 'Alert below 75' }
             ].map(level => (
               <button
                 key={level.value}
@@ -269,6 +287,38 @@ export default function Settings() {
                 <p style={{ fontSize: '11px', color: '#999', margin: '4px 0 0 0' }}>{level.desc}</p>
               </button>
             ))}
+          </div>
+        </div>
+
+        {/* Video Retention */}
+        <div style={{ ...cardStyle, marginTop: '24px' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#0052cc', marginBottom: '20px', marginTop: 0 }}>Video Retention</h3>
+          <p style={{ fontSize: '12px', color: '#666', marginBottom: '16px' }}>Raw recordings are deleted automatically after this many days. Scores are always kept. 0 = keep forever.</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+            <div>
+              <label style={labelStyle}>Keep recordings for (days)</label>
+              <input
+                type="number"
+                min="0"
+                max="3650"
+                value={settings.retentionDays}
+                onChange={e => setSettings({ ...settings, retentionDays: Math.max(0, parseInt(e.target.value) || 0) })}
+                style={inputStyle}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Delete recordings from a date</label>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input type="date" value={deleteDate} onChange={e => setDeleteDate(e.target.value)} style={{ ...inputStyle, flex: 1 }} />
+                <button
+                  onClick={handleDeleteVideos}
+                  disabled={!deleteDate || deleting}
+                  style={{ padding: '10px 16px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', cursor: deleteDate && !deleting ? 'pointer' : 'not-allowed', fontWeight: '600', fontSize: '13px' }}
+                >
+                  {deleting ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 

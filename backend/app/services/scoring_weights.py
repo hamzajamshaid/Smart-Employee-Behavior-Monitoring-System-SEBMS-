@@ -52,16 +52,31 @@ def scoring_weights_fraction(session):
     return {UI_TO_SIGNAL[k]: v / total for k, v in ui.items()}
 
 
+def response_score(seconds):
+    """Response time to 0-100: 100 up to 15 s, 70 at 60 s, falling to 0 at 120 s."""
+    if seconds is None:
+        return None
+    if seconds <= 15:
+        return 100.0
+    if seconds <= 60:
+        return 100.0 - (seconds - 15) * (30.0 / 45.0)
+    if seconds <= 120:
+        return 70.0 * (120.0 - seconds) / 60.0
+    return 0.0
+
+
 def build_breakdown(signals, weights):
-    """Per-component score, percentage weight and points for the signals actually used."""
-    total = sum(weights[k] for k in signals)
+    """Per-component score, weight and points over all configured components.
+    Unmeasured components count as 0, matching the unified score."""
+    total = sum(weights.values())
     if total <= 0:
         return {}
     return {
         k: {
-            'score': round(v, 2),
+            'score': round(signals[k], 2) if k in signals else None,
             'weight_pct': round(weights[k] / total * 100, 2),
-            'points': round(weights[k] * v / total, 2),
+            'points': round(weights[k] * signals.get(k, 0.0) / total, 2),
+            'status': 'used' if k in signals else 'not_measured',
         }
-        for k, v in signals.items()
+        for k in weights
     }
