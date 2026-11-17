@@ -75,7 +75,7 @@ export default function Employees() {
     try {
       setSubmitting(true)
       const headers = { 'Authorization': `Bearer ${token}` }
-      await axios.patch(`${API_BASE}/api/employees/${selectedEmployee.id}`, formData, { headers })
+      await axios.put(`${API_BASE}/api/employees/${selectedEmployee.id}`, formData, { headers })
       alert('✅ Updated')
       setShowEditModal(false)
       setSelectedEmployee(null)

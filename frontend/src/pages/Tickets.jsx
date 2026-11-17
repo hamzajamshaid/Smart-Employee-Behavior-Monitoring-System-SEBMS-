@@ -13,6 +13,7 @@ export default function Tickets() {
   const [typeFilter, setTypeFilter] = useState('All')
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState({})
+  const [selectedGroup, setSelectedGroup] = useState(null)
 
   const token = localStorage.getItem('token')
   const headers = { 'Authorization': `Bearer ${token}` }
@@ -105,6 +106,22 @@ export default function Tickets() {
     return colors[priority] || '#6b7280'
   }
 
+  const groupMap = {}
+  employees.forEach(emp => {
+    groupMap[String(emp.id)] = { key: String(emp.id), name: emp.name, tickets: [], counts: { Open: 0, 'In Progress': 0, Resolved: 0 } }
+  })
+  groupMap['unassigned'] = { key: 'unassigned', name: 'Unassigned', tickets: [], counts: { Open: 0, 'In Progress': 0, Resolved: 0 } }
+  filteredTickets.forEach(t => {
+    const key = t.employee_id ? String(t.employee_id) : 'unassigned'
+    if (!groupMap[key]) {
+      groupMap[key] = { key, name: t.employee_name || 'Unknown', tickets: [], counts: { Open: 0, 'In Progress': 0, Resolved: 0 } }
+    }
+    groupMap[key].tickets.push(t)
+    if (groupMap[key].counts[t.status] !== undefined) groupMap[key].counts[t.status] += 1
+  })
+  const groupedTickets = Object.values(groupMap).sort((a, b) => (a.key === 'unassigned') - (b.key === 'unassigned') || a.name.localeCompare(b.name))
+  const selectedGroupData = groupedTickets.find(g => g.key === selectedGroup) || null
+
   return (
     <div className="px-3 py-3">
       {/* Header */}
@@ -154,110 +171,93 @@ export default function Tickets() {
       {/* Table */}
       {loading ? (
         <div className="text-center py-3">Loading...</div>
-      ) : filteredTickets.length === 0 ? (
-        <div className="text-center py-3"><p className="text-muted">📋 No tickets found</p></div>
       ) : (
-        <div className="card" style={{ overflow: 'hidden', padding: 0 }}>
-          <table>
-            <thead>
-              <tr>
-                <th style={{ textAlign: 'left' }}>ID</th>
-                <th style={{ textAlign: 'left' }}>Title</th>
-                <th>Customer</th>
-                <th>Type</th>
-                <th>Priority</th>
-                <th>Status</th>
-                <th>Assigned To</th>
-                <th>Created</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredTickets.map((ticket) => (
-                <tr key={ticket.id}>
-                  <td style={{ fontWeight: '700', color: 'var(--primary)', fontFamily: 'monospace', fontSize: '12px' }}>
-                    #{ticket.id}
-                  </td>
-                  <td style={{ fontWeight: '500', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {ticket.title}
-                  </td>
-                  <td style={{ textAlign: 'center', fontSize: '13px' }}>
-                    {ticket.customer_name}
-                  </td>
-                  <td style={{ textAlign: 'center', fontSize: '12px' }}>
-                    <span className="badge badge-neutral">{ticket.type}</span>
-                  </td>
-                  <td style={{ textAlign: 'center' }}>
-                    <span style={{ 
-                      background: getPriorityColor(ticket.priority) + '20',
-                      color: getPriorityColor(ticket.priority),
-                      padding: '4px 12px',
-                      borderRadius: '4px',
-                      fontSize: '11px',
-                      fontWeight: '700'
-                    }}>
-                      {ticket.priority}
-                    </span>
-                  </td>
-                  <td style={{ textAlign: 'center' }}>
-                    <select
-                      value={ticket.status}
-                      onChange={(e) => handleStatusChange(ticket.id, e.target.value)}
-                      disabled={updating[ticket.id]}
-                      style={{
-                        padding: '6px 10px',
-                        fontSize: '12px',
-                        border: `2px solid ${getStatusColor(ticket.status)}`,
-                        borderRadius: '4px',
-                        background: '#fff',
-                        color: getStatusColor(ticket.status),
-                        fontWeight: '600',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      <option value="Open">Open</option>
-                      <option value="In Progress">In Progress</option>
-                      <option value="Resolved">Resolved</option>
-                    </select>
-                  </td>
-                  <td style={{ textAlign: 'center' }}>
-                    <select
-                      value={ticket.employee_id || ''}
-                      onChange={(e) => handleAssignEmployee(ticket.id, e.target.value)}
-                      disabled={updating[ticket.id]}
-                      style={{
-                        padding: '6px 10px',
-                        fontSize: '12px',
-                        border: '1px solid var(--neutral-300)',
-                        borderRadius: '4px',
-                        background: '#fff',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      <option value="">Unassigned</option>
-                      {employees.map(emp => (
-                        <option key={emp.id} value={emp.id}>{emp.name}</option>
-                      ))}
-                    </select>
-                  </td>
-                  <td style={{ textAlign: 'center', fontSize: '12px', color: 'var(--neutral-500)' }}>
-                    {new Date(ticket.created_at).toLocaleDateString()}
-                  </td>
-                  <td style={{ textAlign: 'center' }}>
-                    <button 
-                      className="btn-primary" 
-                      style={{ fontSize: '12px', padding: '6px 12px' }} 
-                      onClick={() => navigate(`/tickets/${ticket.id}`)}
-                      disabled={updating[ticket.id]}
-                    >
-                      View
-                    </button>
-                  </td>
+        <>
+          <div className="card" style={{ overflow: 'hidden', padding: 0 }}>
+            <table>
+              <thead>
+                <tr>
+                  <th style={{ textAlign: 'left' }}>Employee</th>
+                  <th>Total</th>
+                  <th>Open</th>
+                  <th>In Progress</th>
+                  <th>Resolved</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {groupedTickets.map(group => (
+                  <tr key={group.key}>
+                    <td style={{ fontWeight: '600' }}>
+                      <button onClick={() => setSelectedGroup(group.key)} style={{ background: 'none', border: 'none', padding: 0, color: 'var(--primary)', fontWeight: '700', cursor: 'pointer', textDecoration: 'underline' }}>{group.name}</button>
+                    </td>
+                    <td style={{ textAlign: 'center' }}>{group.tickets.length}</td>
+                    <td style={{ textAlign: 'center' }}>{group.counts.Open}</td>
+                    <td style={{ textAlign: 'center' }}>{group.counts['In Progress']}</td>
+                    <td style={{ textAlign: 'center' }}>{group.counts.Resolved}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {selectedGroupData && (
+            <div onClick={() => setSelectedGroup(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+              <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: '10px', padding: '24px', width: 'min(1100px, 100%)', maxHeight: '85vh', display: 'flex', flexDirection: 'column', boxShadow: '0 10px 40px rgba(0,0,0,0.25)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                  <h3 style={{ margin: 0 }}>{selectedGroupData.name} · {selectedGroupData.tickets.length} ticket(s)</h3>
+                  <button className="btn-secondary" onClick={() => setSelectedGroup(null)}>✕ Close</button>
+                </div>
+                <div style={{ overflowY: 'auto', flex: 1 }}>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th style={{ textAlign: 'left' }}>ID</th>
+                        <th style={{ textAlign: 'left' }}>Title</th>
+                        <th>Customer</th>
+                        <th>Type</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th>Assigned To</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedGroupData.tickets.map(ticket => (
+                      <tr key={ticket.id}>
+                        <td style={{ fontWeight: '700', color: 'var(--primary)', fontFamily: 'monospace', fontSize: '12px' }}>#{ticket.id}</td>
+                        <td style={{ fontWeight: '500', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ticket.title}</td>
+                        <td style={{ textAlign: 'center', fontSize: '13px' }}>{ticket.customer_name}</td>
+                        <td style={{ textAlign: 'center', fontSize: '12px' }}><span className="badge badge-neutral">{ticket.type}</span></td>
+                        <td style={{ textAlign: 'center' }}>
+                          <span style={{ background: getPriorityColor(ticket.priority) + '20', color: getPriorityColor(ticket.priority), padding: '4px 12px', borderRadius: '4px', fontSize: '11px', fontWeight: '700' }}>{ticket.priority}</span>
+                        </td>
+                        <td style={{ textAlign: 'center' }}>
+                          <select value={ticket.status} onChange={(e) => handleStatusChange(ticket.id, e.target.value)} disabled={updating[ticket.id]} style={{ padding: '6px 10px', fontSize: '12px', border: `2px solid ${getStatusColor(ticket.status)}`, borderRadius: '4px', background: '#fff', color: getStatusColor(ticket.status), fontWeight: '600', cursor: 'pointer' }}>
+                            <option value="Open">Open</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Resolved">Resolved</option>
+                          </select>
+                        </td>
+                        <td style={{ textAlign: 'center' }}>
+                          <select value={ticket.employee_id || ''} onChange={(e) => handleAssignEmployee(ticket.id, e.target.value)} disabled={updating[ticket.id]} style={{ padding: '6px 10px', fontSize: '12px', border: '1px solid var(--neutral-300)', borderRadius: '4px', background: '#fff', cursor: 'pointer' }}>
+                            <option value="">Unassigned</option>
+                            {employees.map(emp => (<option key={emp.id} value={emp.id}>{emp.name}</option>))}
+                          </select>
+                        </td>
+                        <td style={{ textAlign: 'center', fontSize: '12px', color: 'var(--neutral-500)' }}>{new Date(ticket.created_at).toLocaleDateString()}</td>
+                        <td style={{ textAlign: 'center' }}>
+                          <button className="btn-primary" style={{ fontSize: '12px', padding: '6px 12px' }} onClick={() => navigate(`/tickets/${ticket.id}`)} disabled={updating[ticket.id]}>View</button>
+                        </td>
+                      </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   )

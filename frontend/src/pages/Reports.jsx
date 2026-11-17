@@ -57,7 +57,7 @@ export default function Reports() {
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `${empName ? empName.toLowerCase().replace(/ /g, '-') : 'all-employees'}-report-${new Date().toISOString().split('T')[0]}.pdf`);
+      link.setAttribute('download', `${empName ? empName.toLowerCase().replace(/ /g, '-') : 'all-employees'}-report-${new Date().toISOString().split('T')[0]}.xlsx`);
       document.body.appendChild(link);
       link.click();
       link.parentNode.removeChild(link);
@@ -134,23 +134,6 @@ export default function Reports() {
           })}
         </div>
 
-        {/* Score Trend */}
-        <div style={cardStyle}>
-          <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#0052cc', marginBottom: '14px', marginTop: 0 }}>Score Trend — All Employees</h3>
-          {trendData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={280}>
-              <LineChart data={trendData} margin={{ top: 5, right: 10, left: -15, bottom: 0 }}>
-                <XAxis dataKey="date" hide />
-                <YAxis domain={[50, 100]} fontSize={11} stroke="#ddd" />
-                <Tooltip contentStyle={{ background: '#fff', border: '2px solid #0052cc', borderRadius: '6px', boxShadow: '0 2px 8px rgba(0,82,204,0.15)', padding: '8px 12px', fontSize: '12px' }} />
-                <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '12px', color: '#333' }} />
-                {Object.keys(COLORS).map(name => trendData[0][name] !== undefined ? <Line key={name} type="monotone" dataKey={name} stroke={COLORS[name]} strokeWidth={2.5} dot={false} /> : null)}
-              </LineChart>
-            </ResponsiveContainer>
-          ) : (
-            <div style={{ height: '280px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999', fontSize: '13px' }}>No data</div>
-          )}
-        </div>
       </div>
     </div>
   );

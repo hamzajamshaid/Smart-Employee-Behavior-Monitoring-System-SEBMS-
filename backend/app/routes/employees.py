@@ -127,7 +127,7 @@ def get_employees():
             if not user or user.role != 'Admin':
                 return jsonify({'error': 'Only admins can view employees'}), 403
             
-            employees = session.query(Employee).all()
+            employees = session.query(Employee).filter(Employee.status != 'Deleted').all()
             
             employees_data = []
             for e in employees:
@@ -328,6 +328,34 @@ def reset_employee_password(employee_id):
 # DELETE EMPLOYEE
 # ============================================================================
 
+@employees_bp.route('/employees/<int:employee_id>', methods=['PUT'])
+@jwt_required()
+def update_employee(employee_id):
+    denied = _admin_only()
+    if denied:
+        return denied
+    try:
+        data = request.get_json(silent=True) or {}
+        session = current_app.SessionLocal()
+        try:
+            from app.models import Employee
+            employee = session.query(Employee).filter_by(id=employee_id).first()
+            if not employee:
+                return jsonify({'error': 'Employee not found'}), 404
+            name = (data.get('name') or '').strip()
+            if not name:
+                return jsonify({'error': 'Name is required'}), 400
+            employee.name = name
+            employee.counter_id = int(data.get('counter_id') or employee.counter_id)
+            employee.email = (data.get('email') or '').strip() or None
+            employee.phone = (data.get('phone') or '').strip() or None
+            session.commit()
+            return jsonify({'id': employee.id, 'name': employee.name, 'message': 'Employee updated'}), 200
+        finally:
+            session.close()
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @employees_bp.route('/employees/<int:employee_id>', methods=['DELETE'])
 @jwt_required()
 def delete_employee(employee_id):
@@ -352,7 +380,7 @@ def delete_employee(employee_id):
             if not employee:
                 return jsonify({'error': 'Employee not found'}), 404
             
-            employee.status = 'Inactive'
+            employee.status = 'Deleted'
             session.commit()
             
             return jsonify({

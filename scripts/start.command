@@ -17,7 +17,7 @@ sleep 2
 cd "$PROJECT/backend"
 nohup "$PY" run.py > "$LOGS/backend.log" 2>&1 &
 nohup "$PY" -m celery -A celery_worker worker --loglevel=info --pool=solo > "$LOGS/worker.log" 2>&1 &
-SENSOR_PORT=$(ls /dev/cu.usbserial* 2>/dev/null | head -1) nohup "$PY" tools/ultrasonic_bridge.py > "$LOGS/sensor.log" 2>&1 &
+SENSOR_PORT=$(ls /dev/cu.usbserial* 2>/dev/null | head -1) nohup "$PY" -u tools/ultrasonic_bridge.py > "$LOGS/sensor.log" 2>&1 &
 
 nohup cloudflared tunnel --url http://localhost:5173 > "$LOGS/tunnel.log" 2>&1 &
 URL=""
