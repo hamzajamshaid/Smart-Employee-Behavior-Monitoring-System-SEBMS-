@@ -485,6 +485,8 @@ def accept_appointment(appointment_id):
             a = session.query(Appointment).filter_by(id=appointment_id).first()
             if not a:
                 return jsonify({'error': 'Appointment not found'}), 404
+            if a.appointment_date < datetime.now():
+                return jsonify({'error': 'This appointment time has already passed'}), 409
             if a.status != 'Pending' or a.employee_id is not None:
                 return jsonify({'error': 'This request is no longer open'}), 409
             emp = session.query(Employee).filter_by(id=emp_id).first()

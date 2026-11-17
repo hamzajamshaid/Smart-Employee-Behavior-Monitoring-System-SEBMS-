@@ -208,6 +208,9 @@ export default function Appointments() {
                     <span style={{ padding: '4px 12px', background: statusColor(apt.status) + '20', color: statusColor(apt.status), borderRadius: '4px', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase' }}>
                       {apt.status === 'Pending' ? 'Awaiting confirmation' : apt.status}
                     </span>
+                    {apt.status === 'Confirmed' && (
+                      <button onClick={() => navigate(`/meeting/${apt.id}`)} style={{ padding: '6px 14px', background: '#0c2340', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '12px' }}>Join meeting</button>
+                    )}
                   </div>
                 </div>
               ))}

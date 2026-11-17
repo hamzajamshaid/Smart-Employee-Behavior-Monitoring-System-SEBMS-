@@ -10,6 +10,7 @@ import EmployeeLogin from './pages/EmployeeLogin'
 import CustomerLogin from './pages/CustomerLogin'
 import CustomerRegister from './pages/CustomerRegister'
 import CustomerFeedback from './pages/CustomerFeedback'
+import MeetingRoom from './pages/MeetingRoom'
 
 // Admin Pages
 import Dashboard from './pages/Dashboard'
@@ -103,6 +104,7 @@ export default function App() {
         <Route path="/customer-register" element={<CustomerRegister />} />
         {/* 🔓 FEEDBACK FORM — PUBLIC (No auth needed!) */}
         <Route path="/feedback/:interactionId" element={<CustomerFeedback />} />
+        <Route path="/meeting/:appointmentId" element={<ProtectedRoute><MeetingRoom /></ProtectedRoute>} />
 
         {/* ========== PROTECTED ROUTES WITH LAYOUT ========== */}
         <Route element={<MainLayout />}>

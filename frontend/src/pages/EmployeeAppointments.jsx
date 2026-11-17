@@ -265,6 +265,9 @@ export default function EmployeeAppointments() {
                   <p style={{ fontSize: '13px', color: '#555', margin: 0 }}>
                     Service: {apt.service_type || 'General'} | Vehicle: {apt.vehicle_model || 'N/A'}
                   </p>
+                  {apt.status === 'Confirmed' && (
+                    <button onClick={() => navigate(`/meeting/${apt.id}`)} style={{ marginTop: '10px', padding: '8px 14px', background: '#0c2340', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '12px' }}>Join meeting</button>
+                  )}
                 </div>
               ))}
             </div>

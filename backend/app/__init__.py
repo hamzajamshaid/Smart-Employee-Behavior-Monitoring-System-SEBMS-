@@ -62,6 +62,7 @@ def create_app():
         from app.routes.alerts import alerts_bp
         from app.routes.tickets import tickets_bp
         from app.routes.appointments import appointments_bp
+        from app.routes.meetings import meetings_bp
         from app.routes.attendance import attendance_bp
         from app.routes.interactions import interactions_bp
         from app.routes.batch import batch_bp
@@ -73,6 +74,7 @@ def create_app():
         app.register_blueprint(alerts_bp, url_prefix='/api')
         app.register_blueprint(tickets_bp, url_prefix='/api')
         app.register_blueprint(appointments_bp, url_prefix='/api')
+        app.register_blueprint(meetings_bp, url_prefix='/api')
         app.register_blueprint(attendance_bp, url_prefix='/api')
         app.register_blueprint(interactions_bp, url_prefix='/api')
         app.register_blueprint(batch_bp, url_prefix='/api')
