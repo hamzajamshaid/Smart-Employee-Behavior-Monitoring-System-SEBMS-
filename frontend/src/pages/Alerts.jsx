@@ -114,7 +114,7 @@ export default function Alerts() {
   const cardStyle = { background: '#fff', borderRadius: '10px', padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', border: '1px solid #e8e8e8' };
   const tabStyle = (active, color) => ({ padding: '8px 16px', background: active ? color : '#fff', color: active ? '#fff' : color, border: `1px solid ${active ? color : '#e8e8e8'}`, borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' });
 
-  const lowAlerts = alerts.filter(a => a.alert_type === 'Low Score' && !a.is_resolved);
+  const lowAlerts = alerts.filter(a => !a.is_resolved);
   const resolvedAlerts = alerts.filter(a => a.is_resolved);
   const tabAlerts = tab === 'low' ? lowAlerts : resolvedAlerts;
   const employees = Object.values(alerts.reduce((acc, a) => {
@@ -153,10 +153,9 @@ export default function Alerts() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', gap: '18px', alignItems: 'flex-start', flexWrap: 'wrap', flex: 1 }}>
             <span style={{ fontSize: '12px', fontWeight: '700', color: '#fff', background: '#0052cc', borderRadius: '4px', padding: '3px 8px', marginTop: '2px' }}>#{a.id}</span>
+                <span style={{ fontSize: '11px', fontWeight: '700', color: '#b45309', background: '#fef3c7', borderRadius: '4px', padding: '3px 8px' }}>{a.alert_type}</span>
             <Field label="Employee" value={a.employee_name || 'Unknown employee'} />
             <Field label="Customer" value={a.customer_name} />
-            <Field label="Session" value={`${a.session_id ?? '—'} · ${fmt(a.session_at)}`} />
-            <Field label="Triggered" value={fmt(a.triggered_at)} />
           </div>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
             <button onClick={() => loadExplanation(a.id)} disabled={ex.loading} style={{ padding: '7px 12px', background: '#fff', color: '#0052cc', border: '1px solid #0052cc', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>
@@ -195,12 +194,12 @@ export default function Alerts() {
     <div style={{ minHeight: '100vh', background: '#f5f8fc' }}>
       <div style={{ position: 'sticky', top: 0, background: '#e8f0ff', borderBottom: '2px solid #0052cc', padding: '16px 30px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', zIndex: 50 }}>
         <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#0052cc', margin: 0, lineHeight: '1.1' }}>🚨 Alerts</h1>
-        <p style={{ fontSize: '13px', color: '#666', margin: '4px 0 0 0' }}>Low unified score: {lowAlerts.length} · Resolved: {resolvedAlerts.length}</p>
+        <p style={{ fontSize: '13px', color: '#666', margin: '4px 0 0 0' }}>Unresolved: {lowAlerts.length} · Resolved: {resolvedAlerts.length}</p>
       </div>
 
       <div style={{ padding: '24px 30px' }}>
         <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
-          <button onClick={() => setTab('low')} style={tabStyle(tab === 'low', LOW)}>Low Unified Score ({lowAlerts.length})</button>
+          <button onClick={() => setTab('low')} style={tabStyle(tab === 'low', LOW)}>Unresolved ({lowAlerts.length})</button>
           <button onClick={() => setTab('resolved')} style={tabStyle(tab === 'resolved', GREEN)}>Resolved ({resolvedAlerts.length})</button>
         </div>
 

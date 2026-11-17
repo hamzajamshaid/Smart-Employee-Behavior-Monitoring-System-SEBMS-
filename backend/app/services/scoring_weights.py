@@ -52,16 +52,18 @@ def scoring_weights_fraction(session):
     return {UI_TO_SIGNAL[k]: v / total for k, v in ui.items()}
 
 
-def response_score(seconds):
-    """Response time to 0-100: 100 up to 15 s, 70 at 60 s, falling to 0 at 120 s."""
+def response_score(seconds, limit=15.0):
+    """Response time to 0-100. Original curve (100 up to 15 s, 70 at 60 s, 0 at 120 s),
+    scaled so that 15 s corresponds to the configured limit."""
     if seconds is None:
         return None
-    if seconds <= 15:
+    s = float(seconds) * 15.0 / float(limit or 15.0)
+    if s <= 15:
         return 100.0
-    if seconds <= 60:
-        return 100.0 - (seconds - 15) * (30.0 / 45.0)
-    if seconds <= 120:
-        return 70.0 * (120.0 - seconds) / 60.0
+    if s <= 60:
+        return 100.0 - (s - 15) * (30.0 / 45.0)
+    if s <= 120:
+        return 70.0 * (120.0 - s) / 60.0
     return 0.0
 
 
@@ -80,3 +82,13 @@ def build_breakdown(signals, weights):
         }
         for k in weights
     }
+
+
+DEFAULT_THRESHOLDS = {'presenceTarget': 90, 'responseTimeLimit': 15,
+                       'emotionPositiveRatio': 70, 'feedbackMinimum': 3.5}
+
+
+def load_thresholds(session):
+    """Detection thresholds from Settings, falling back to defaults."""
+    saved = load_settings(session).get('detectionThresholds') or {}
+    return {k: float(saved.get(k, v)) for k, v in DEFAULT_THRESHOLDS.items()}

@@ -96,8 +96,10 @@ def process_daily_interactions(hours=24, rescore_ids=None):
         from app.services.sentiment_analyzer import analyze_sentiment
         from app.services.file_manager import get_file_manager
         from app.services.alert_generator import AlertGenerator, ALERT_SENSITIVITY_THRESHOLDS
+        from app.services.scoring_weights import load_thresholds
 
         session = app.SessionLocal()
+        thresholds = load_thresholds(session)
         counts = {'scored': 0, 'insufficient_signals': 0, 'no_presence': 0, 'skipped_duplicate': 0, 'failed': 0}
         try:
             cutoff = datetime.utcnow() - timedelta(hours=hours)
@@ -184,7 +186,7 @@ def process_daily_interactions(hours=24, rescore_ids=None):
                         rt.response_seconds = rt_res['response_seconds']
                         rt.status = rt_res['status']
                     if rt_res.get('response_seconds') is not None:
-                        signals['response'] = response_score(rt_res['response_seconds'])
+                        signals['response'] = response_score(rt_res['response_seconds'], thresholds['responseTimeLimit'])
                         errors['response'] = 'scored'
                     else:
                         errors['response'] = f"{rt_res['status']}: {rt_res.get('error') or 'no response'}"
@@ -244,7 +246,11 @@ def process_daily_interactions(hours=24, rescore_ids=None):
                     counts[status] += 1
 
                     if unified is not None and unified < alert_threshold:
-                        AlertGenerator(session).check_and_create_alerts(it.employee_id, unified, alert_threshold)
+                        AlertGenerator(session).check_and_create_alerts(it.employee_id, unified, alert_threshold, interaction_id=it.id)
+                    AlertGenerator(session).check_threshold_alerts(
+                        it.employee_id, row.date, row.presence_score, row.emotion_score,
+                        rt_res.get('response_seconds'), fb.star_rating if fb is not None else None, thresholds,
+                        interaction_id=it.id)
 
                     logger.info(f"Interaction {it.id}: {status} unified={row.unified_score} signals={row.signals_used}")
                 except IntegrityError:

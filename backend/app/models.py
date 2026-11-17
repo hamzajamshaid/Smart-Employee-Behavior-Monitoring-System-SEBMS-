@@ -249,6 +249,7 @@ class Alert(Base):
     is_resolved = Column(Boolean, default=False)
     triggered_at = Column(DateTime, default=datetime.utcnow)
     resolved_at = Column(DateTime, nullable=True)
+    session_id = Column(Integer, nullable=True)  # interaction that triggered the alert
     
     # Relationships
     employee = relationship('Employee', back_populates='alerts')
