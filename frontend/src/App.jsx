@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 
 // Pages
 import Landing from './pages/Landing'
+import About from './pages/About'
 import Login from './pages/Login'
 import EmployeeLogin from './pages/EmployeeLogin'
 import CustomerLogin from './pages/CustomerLogin'
@@ -95,6 +96,7 @@ export default function App() {
       <Routes>
         {/* ========== PUBLIC ROUTES (No Layout/Auth) ========== */}
         <Route path="/" element={<Landing />} />
+        <Route path="/about" element={<About />} />
         <Route path="/login" element={<Login />} />
         <Route path="/employee-login" element={<EmployeeLogin />} />
         <Route path="/customer-login" element={<CustomerLogin />} />

@@ -115,7 +115,48 @@ export default function Login() {
       }}>
         {/* Logo & Title */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <img src="/sebms-logo.png" alt="SEBMS" style={{ width: '260px', maxWidth: '100%', height: 'auto', display: 'block', margin: '0 auto 12px' }} />
+          <style>{`
+            .login-shield-wrap {
+              width: 78px;
+              perspective: 400px;
+              flex-shrink: 0;
+            }
+            .login-shield-flip {
+              position: relative;
+              width: 100%;
+              transform-style: preserve-3d;
+              animation: sebms-shield-flip 12s linear infinite;
+            }
+            .login-shield-face {
+              display: block;
+              width: 100%;
+              height: auto;
+              backface-visibility: hidden;
+              -webkit-backface-visibility: hidden;
+            }
+            .login-shield-back {
+              position: absolute;
+              top: 0;
+              left: 0;
+              transform: rotateY(180deg);
+                          }
+            @keyframes sebms-shield-flip {
+              from { transform: rotateY(0deg); }
+              to   { transform: rotateY(360deg); }
+            }
+            @media (prefers-reduced-motion: reduce) {
+              .login-shield-flip { animation: none; }
+            }
+          `}</style>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px' }}>
+            <div className="login-shield-wrap">
+              <div className="login-shield-flip">
+                <img className="login-shield-face" src="/sebms-shield.png" alt="" />
+                <img className="login-shield-face login-shield-back" src="/sebms-shield.png" alt="" aria-hidden="true" />
+              </div>
+            </div>
+            <img src="/sebms-wordmark.png" alt="SEBMS" style={{ width: '240px', maxWidth: '100%', height: 'auto', display: 'block' }} />
+          </div>
         </div>
 
         {/* Form */}
@@ -271,23 +312,6 @@ export default function Login() {
           </p>
         )}
 
-        {/* Demo Credentials */}
-        <div style={{
-          marginTop: '24px',
-          padding: '14px',
-          background: '#e8f1f5',
-          borderRadius: '8px',
-          border: '1px solid #cfe0ea',
-          fontSize: '12px',
-          color: '#0c2340'
-        }}>
-          <p style={{ margin: '0 0 8px 0', fontWeight: '700' }}>Demo usernames (ask your administrator for passwords):</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <div>👤 <strong>Admin:</strong> <code style={{ background: '#fff', padding: '1px 4px', borderRadius: '3px', fontFamily: 'monospace' }}>admin</code></div>
-            <div>👨‍💼 <strong>Employee:</strong> <code style={{ background: '#fff', padding: '1px 4px', borderRadius: '3px', fontFamily: 'monospace' }}>EMP001</code></div>
-            <div>👤 <strong>Customer:</strong> <code style={{ background: '#fff', padding: '1px 4px', borderRadius: '3px', fontFamily: 'monospace' }}>03001234567</code></div>
-          </div>
-        </div>
       </div>
     </div>
   );
