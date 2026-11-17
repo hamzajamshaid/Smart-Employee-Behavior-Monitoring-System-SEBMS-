@@ -73,7 +73,10 @@ def add_employee():
             while session.query(Employee).filter_by(employee_code=employee_code).first():
                 employee_code = generate_employee_code()
             
-            password = generate_password()
+            custom_pw = (data.get('password') or '').strip()
+            if custom_pw and len(custom_pw) < 6:
+                return jsonify({'error': 'Password must be at least 6 characters'}), 400
+            password = custom_pw or generate_password()
             
             employee = Employee(
                 name=name,
@@ -307,7 +310,22 @@ def reset_employee_password(employee_id):
             if not employee:
                 return jsonify({'error': 'Employee not found'}), 404
             
-            new_password = generate_password()
+            body = request.get_json(silent=True) or {}
+            custom_pw = (body.get('password') or '').strip()
+            if custom_pw and len(custom_pw) < 6:
+                return jsonify({'error': 'Password must be at least 6 characters'}), 400
+            new_password = custom_pw or generate_password()
+            new_code = (body.get('employee_code') or '').strip()
+            if new_code and new_code != employee.employee_code:
+                taken = session.query(Employee).filter(Employee.employee_code == new_code, Employee.id != employee.id).first()
+                if taken:
+                    return jsonify({'error': 'Employee code already in use'}), 409
+                employee.employee_code = new_code
+            new_status = (body.get('status') or '').strip()
+            if new_status:
+                if new_status not in ('Active', 'Inactive', 'On Leave'):
+                    return jsonify({'error': 'Invalid status'}), 400
+                employee.status = new_status
             employee.password_hash = hash_pw(new_password)
             session.commit()
             
@@ -315,6 +333,8 @@ def reset_employee_password(employee_id):
                 'id': employee.id,
                 'name': employee.name,
                 'new_password': new_password,
+                'employee_code': employee.employee_code,
+                'status': employee.status,
                 'message': 'Password reset successfully!'
             }), 200
         

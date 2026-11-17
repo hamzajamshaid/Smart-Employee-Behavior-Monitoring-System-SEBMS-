@@ -5,19 +5,19 @@ import axios from 'axios';
 import API_BASE from '../config';
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-const COLORS = { 'Ahmed Raza': '#0052cc', 'Sara Khan': '#00a86b', 'Bilal Ahmed': '#ff6b35' };
+const COLORS = { 'Ahmed Raza': '#0c2340', 'Sara Khan': '#00a86b', 'Bilal Ahmed': '#ff6b35' };
 const PERIODS = [
   { label: 'This Week', value: 'week' },
   { label: 'This Month', value: 'month' },
   { label: 'Custom', value: 'custom' },
 ];
 
-const btnStyle = (active) => ({ padding: '8px 16px', borderRadius: '6px', border: `1px solid ${active ? '#0052cc' : '#e8e8e8'}`, background: active ? '#0052cc' : '#fff', color: active ? '#fff' : '#0052cc', cursor: 'pointer', fontSize: '13px', fontWeight: active ? '600' : '500', transition: 'all 0.15s' });
+const btnStyle = (active) => ({ padding: '8px 16px', borderRadius: '6px', border: `1px solid ${active ? '#0c2340' : '#e8e8e8'}`, background: active ? '#0c2340' : '#fff', color: active ? '#fff' : '#0c2340', cursor: 'pointer', fontSize: '13px', fontWeight: active ? '600' : '500', transition: 'all 0.15s' });
 const cardStyle = { background: '#fff', borderRadius: '10px', padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', border: '1px solid #e8e8e8', transition: 'all 0.2s linear' };
 
 export default function Reports() {
   const navigate = useNavigate();
-  const token = localStorage.getItem('token');
+  const token = sessionStorage.getItem('token');
   const [employees, setEmployees] = useState([]);
   const [details, setDetails] = useState({});
   const [trendData, setTrendData] = useState([]);
@@ -79,10 +79,10 @@ export default function Reports() {
   return (
     <div style={{ minHeight: '100vh', background: '#f5f8fc' }}>
       {/* Sticky Header */}
-      <div style={{ position: 'sticky', top: 0, background: '#e8f0ff', borderBottom: '2px solid #0052cc', padding: '16px 30px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', zIndex: 50 }}>
+      <div style={{ position: 'sticky', top: 0, background: '#e8f1f5', borderTop: '1px solid #0c2340', borderBottom: '1px solid #0c2340', padding: '0 30px', height: '121px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', zIndex: 50 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '30px' }}>
           <div>
-            <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#0052cc', margin: 0, lineHeight: '1.1' }}>📊 Employee Reports</h1>
+            <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#0c2340', margin: 0, lineHeight: '1.1' }}><img src="/icons/nav/trending-up-dark.png" alt="" style={{ width: '30px', height: '30px', verticalAlign: 'middle', marginRight: '10px' }} />Employee Reports</h1>
             <p style={{ fontSize: '13px', color: '#666', margin: '4px 0 0 0' }}>Performance analytics and insights</p>
           </div>
           <button onClick={() => generateReport()} disabled={generatingReport !== null} style={{ padding: '10px 20px', background: 'linear-gradient(135deg, #2E4057 0%, #4a6fa5 100%)', color: '#fff', border: 'none', borderRadius: '6px', cursor: generatingReport === null ? 'pointer' : 'not-allowed', fontSize: '13px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px', opacity: generatingReport !== null ? 0.7 : 1 }} onMouseEnter={e => generatingReport === null && (e.currentTarget.style.transform = 'translateY(-2px)', e.currentTarget.style.boxShadow = '0 4px 12px rgba(46, 64, 87, 0.2)')} onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)', e.currentTarget.style.boxShadow = 'none')}>
@@ -98,7 +98,7 @@ export default function Reports() {
         <div style={{ ...cardStyle, marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
           <span style={{ fontSize: '13px', color: '#333', fontWeight: '700', textTransform: 'uppercase' }}>Period:</span>
           {PERIODS.map(p => <button key={p.value} onClick={() => setPeriod(p.value)} style={btnStyle(period === p.value)}>{p.label}</button>)}
-          {period === 'custom' && <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginLeft: '8px' }}><input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} style={{ padding: '8px 10px', border: '1px solid #0052cc', borderRadius: '6px', fontSize: '12px', color: '#1a1a1a', background: '#fff' }} /><span style={{ color: '#666', fontSize: '12px', fontWeight: '600' }}>to</span><input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} style={{ padding: '8px 10px', border: '1px solid #0052cc', borderRadius: '6px', fontSize: '12px', color: '#1a1a1a', background: '#fff' }} /></div>}
+          {period === 'custom' && <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginLeft: '8px' }}><input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} style={{ padding: '8px 10px', border: '1px solid #0c2340', borderRadius: '6px', fontSize: '12px', color: '#1a1a1a', background: '#fff' }} /><span style={{ color: '#666', fontSize: '12px', fontWeight: '600' }}>to</span><input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} style={{ padding: '8px 10px', border: '1px solid #0c2340', borderRadius: '6px', fontSize: '12px', color: '#1a1a1a', background: '#fff' }} /></div>}
         </div>
 
         {/* Employee Cards */}
@@ -108,10 +108,10 @@ export default function Reports() {
             const scoreColor = d?.unified_score >= 80 ? '#10b981' : d?.unified_score >= 65 ? '#f59e0b' : '#ef4444';
             const boxColor = e.status === 'Active' ? '#10b981' : '#9ca3af';
             return (
-              <div key={e.id} style={{ ...cardStyle, borderTop: `4px solid ${boxColor}` }} onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-2px)', e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,82,204,0.15)')} onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)', e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)')}>
+              <div key={e.id} style={{ ...cardStyle, borderTop: `4px solid ${boxColor}` }} onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-2px)', e.currentTarget.style.boxShadow = '0 8px 24px rgba(12,35,64,0.15)')} onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)', e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)')}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1 }}>
-                    <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'linear-gradient(135deg, #0052cc 0%, #003d99 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '18px', fontWeight: '700' }}>
+                    <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'linear-gradient(135deg, #0c2340 0%, #13315c 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '18px', fontWeight: '700' }}>
                       {e.name.charAt(0)}
                     </div>
                     <div>
@@ -128,7 +128,7 @@ export default function Reports() {
                       {[{ label: 'Presence', value: `${d.presence_rate || '—'}%` }, { label: 'Response', value: `${d.avg_response || '—'}s` }, { label: 'Feedback', value: `${d.feedback || '—'}★` }, { label: 'Interactions', value: d.total_interactions || '—' }].map(s => (
                         <div key={s.label} style={{ background: '#f9fafb', borderRadius: '8px', padding: '10px 12px', border: '1px solid #e8e8e8' }}>
                           <p style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase', fontWeight: '700', margin: 0 }}>{s.label}</p>
-                          <p style={{ fontSize: '16px', fontWeight: '800', color: '#0052cc', margin: '4px 0 0 0' }}>{s.value}</p>
+                          <p style={{ fontSize: '16px', fontWeight: '800', color: '#0c2340', margin: '4px 0 0 0' }}>{s.value}</p>
                         </div>
                       ))}
                     </div>

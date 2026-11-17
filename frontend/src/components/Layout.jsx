@@ -2,8 +2,8 @@
 import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
 
-export default function MainLayout() {
-  const userRole = localStorage.getItem('role')
+export default function MainLayout({ children }) {
+  const userRole = sessionStorage.getItem('role')
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#fcf7f5' }}>
@@ -15,7 +15,7 @@ export default function MainLayout() {
         marginLeft: '250px',
         transition: 'margin-left 300ms cubic-bezier(0.4, 0, 0.2, 1)',
       }}>
-        <Outlet />
+        {children ?? <Outlet />}
       </main>
     </div>
   )

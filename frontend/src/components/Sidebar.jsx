@@ -7,12 +7,12 @@ export default function Sidebar({ userRole }) {
   const [isOpen, setIsOpen] = useState(true)
 
   const handleLogout = () => {
-    localStorage.removeItem('token')
-    localStorage.removeItem('role')
-    localStorage.removeItem('username')
-    localStorage.removeItem('employee_id')
-    localStorage.removeItem('customer_id')
-    localStorage.removeItem('name')
+    sessionStorage.removeItem('token')
+    sessionStorage.removeItem('role')
+    sessionStorage.removeItem('username')
+    sessionStorage.removeItem('employee_id')
+    sessionStorage.removeItem('customer_id')
+    sessionStorage.removeItem('name')
     navigate('/')
   }
 
@@ -33,9 +33,7 @@ export default function Sidebar({ userRole }) {
     { path: '/employee-dashboard', label: 'Dashboard', icon: '/icons/nav/layout-dashboard-light.png' },
     { path: '/employee-appointments', label: 'Appointments', icon: '/icons/nav/calendar-days-light.png' },
     { path: '/employee-tickets', label: 'My Tickets', icon: '/icons/nav/ticket-light.png' },
-    { path: '/attendance', label: 'Attendance', icon: '⏱️' },
-    { path: '/simulate', label: 'Simulate Capture', icon: '🎬' },
-    { path: '/counter', label: 'Counter', icon: '🪑' },
+    { path: '/counter', label: 'Counter', icon: '/icons/nav/counter-light.png' },
   ]
 
   const customerMenuItems = [

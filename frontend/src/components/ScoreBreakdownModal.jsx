@@ -8,21 +8,21 @@ export default function ScoreBreakdownModal({ interactionId, onClose }) {
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    const token = localStorage.getItem('token')
+    const token = sessionStorage.getItem('token')
     axios.get(`${API_BASE}/api/scores/${interactionId}/breakdown`, { headers: { Authorization: `Bearer ${token}` } })
       .then(res => setData(res.data))
       .catch(err => setError(err.response?.data?.error || 'Could not load breakdown'))
   }, [interactionId])
 
-  const th = { textAlign: 'left', padding: '8px', fontSize: '12px', color: '#0052cc', borderBottom: '2px solid #0052cc' }
+  const th = { textAlign: 'left', padding: '8px', fontSize: '12px', color: '#0c2340', borderBottom: '2px solid #0c2340' }
   const td = { padding: '8px', fontSize: '13px', color: '#333', borderBottom: '1px solid #eee' }
 
   return createPortal(
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 10001, display: 'flex', padding: '20px' }}>
       <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: '10px', padding: '24px', width: 'min(760px, 100%)', boxSizing: 'border-box', margin: 'auto', boxShadow: '0 10px 40px rgba(0,0,0,0.25)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-          <h3 style={{ margin: 0, color: '#0052cc', fontSize: '18px' }}>Unified score breakdown · session #{interactionId}</h3>
-          <button onClick={onClose} style={{ padding: '6px 14px', border: '1px solid #0052cc', background: '#fff', color: '#0052cc', borderRadius: '6px', cursor: 'pointer' }}>Close</button>
+          <h3 style={{ margin: 0, color: '#0c2340', fontSize: '18px' }}>Unified score breakdown · session #{interactionId}</h3>
+          <button onClick={onClose} style={{ padding: '6px 14px', border: '1px solid #0c2340', background: '#fff', color: '#0c2340', borderRadius: '6px', cursor: 'pointer' }}>Close</button>
         </div>
         {error && <p style={{ color: '#C0392B' }}>{error}</p>}
         {!data && !error && <p>Loading…</p>}

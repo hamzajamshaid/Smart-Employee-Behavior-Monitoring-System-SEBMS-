@@ -66,7 +66,7 @@ export default function Alerts() {
   const [dateFilter, setDateFilter] = useState('all');
   const [employeeFilter, setEmployeeFilter] = useState('all');
   const groupMode = 'day';
-  const token = localStorage.getItem('token');
+  const token = sessionStorage.getItem('token');
   const headers = { Authorization: `Bearer ${token}` };
 
   useEffect(() => {
@@ -152,13 +152,13 @@ export default function Alerts() {
       <div key={a.id} style={{ padding: '14px 16px', background: accent + '10', border: `2px solid ${accent}`, borderRadius: '8px', marginBottom: '10px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', gap: '18px', alignItems: 'flex-start', flexWrap: 'wrap', flex: 1 }}>
-            <span style={{ fontSize: '12px', fontWeight: '700', color: '#fff', background: '#0052cc', borderRadius: '4px', padding: '3px 8px', marginTop: '2px' }}>#{a.id}</span>
+            <span style={{ fontSize: '12px', fontWeight: '700', color: '#fff', background: '#0c2340', borderRadius: '4px', padding: '3px 8px', marginTop: '2px' }}>#{a.id}</span>
                 <span style={{ fontSize: '11px', fontWeight: '700', color: '#b45309', background: '#fef3c7', borderRadius: '4px', padding: '3px 8px' }}>{a.alert_type}</span>
             <Field label="Employee" value={a.employee_name || 'Unknown employee'} />
             <Field label="Customer" value={a.customer_name} />
           </div>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
-            <button onClick={() => loadExplanation(a.id)} disabled={ex.loading} style={{ padding: '7px 12px', background: '#fff', color: '#0052cc', border: '1px solid #0052cc', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>
+            <button onClick={() => loadExplanation(a.id)} disabled={ex.loading} style={{ padding: '7px 12px', background: '#fff', color: '#0c2340', border: '1px solid #0c2340', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>
               {ex.loading ? 'Generating…' : 'Explain (AI)'}
             </button>
             {!a.is_resolved && (
@@ -192,8 +192,8 @@ export default function Alerts() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#f5f8fc' }}>
-      <div style={{ position: 'sticky', top: 0, background: '#e8f0ff', borderBottom: '2px solid #0052cc', padding: '16px 30px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', zIndex: 50 }}>
-        <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#0052cc', margin: 0, lineHeight: '1.1' }}>🚨 Alerts</h1>
+      <div style={{ position: 'sticky', top: 0, background: '#e8f1f5', borderTop: '1px solid #0c2340', borderBottom: '1px solid #0c2340', padding: '0 30px', height: '121px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', zIndex: 50 }}>
+        <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#0c2340', margin: 0, lineHeight: '1.1' }}><img src="/icons/nav/bell-dark.png" alt="" style={{ width: '30px', height: '30px', verticalAlign: 'middle', marginRight: '10px' }} />Alerts</h1>
         <p style={{ fontSize: '13px', color: '#666', margin: '4px 0 0 0' }}>Unresolved: {lowAlerts.length} · Resolved: {resolvedAlerts.length}</p>
       </div>
 

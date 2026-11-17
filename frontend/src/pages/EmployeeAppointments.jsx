@@ -9,8 +9,8 @@ export default function EmployeeAppointments() {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('all');
-  const token = localStorage.getItem('token');
-  const employeeId = localStorage.getItem('employee_id');
+  const token = sessionStorage.getItem('token');
+  const employeeId = sessionStorage.getItem('employee_id');
   const headers = { Authorization: `Bearer ${token}` };
 
   useEffect(() => {
@@ -40,7 +40,7 @@ export default function EmployeeAppointments() {
   const upcomingCount = appointments.filter(a => new Date(a.appointment_date) >= new Date()).length;
 
   const statusColor = (status) => {
-    const colors = { 'Pending': '#f59e0b', 'Confirmed': '#0052cc', 'Completed': '#10b981', 'Cancelled': '#ef4444' };
+    const colors = { 'Pending': '#f59e0b', 'Confirmed': '#0c2340', 'Completed': '#10b981', 'Cancelled': '#ef4444' };
     return colors[status] || '#6b7280';
   };
 
@@ -51,10 +51,10 @@ export default function EmployeeAppointments() {
   return (
     <div style={{ minHeight: '100vh', background: '#f5f8fc' }}>
       {/* Sticky Header */}
-      <div style={{ position: 'sticky', top: 0, background: '#e8f0ff', borderBottom: '2px solid #0052cc', padding: '16px 30px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', zIndex: 50 }}>
+      <div style={{ position: 'sticky', top: 0, background: '#e8f1f5', borderTop: '1px solid #0c2340', borderBottom: '1px solid #0c2340', padding: '0 30px', height: '121px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', zIndex: 50 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '30px' }}>
           <div>
-            <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#0052cc', margin: 0, lineHeight: '1.1' }}>📅 My Appointments</h1>
+            <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#0c2340', margin: 0, lineHeight: '1.1' }}><img src="/icons/nav/calendar-days-dark.png" alt="" style={{ width: '30px', height: '30px', verticalAlign: 'middle', marginRight: '10px' }} />My Appointments</h1>
             <p style={{ fontSize: '13px', color: '#666', margin: '4px 0 0 0' }}>Upcoming: {upcomingCount}</p>
           </div>
         </div>
@@ -70,9 +70,9 @@ export default function EmployeeAppointments() {
               onClick={() => setFilterStatus(status)}
               style={{
                 padding: '8px 16px',
-                background: filterStatus === status ? '#0052cc' : '#fff',
-                color: filterStatus === status ? '#fff' : '#0052cc',
-                border: `1px solid ${filterStatus === status ? '#0052cc' : '#e8e8e8'}`,
+                background: filterStatus === status ? '#0c2340' : '#fff',
+                color: filterStatus === status ? '#fff' : '#0c2340',
+                border: `1px solid ${filterStatus === status ? '#0c2340' : '#e8e8e8'}`,
                 borderRadius: '6px',
                 cursor: 'pointer',
                 fontSize: '12px',
@@ -111,7 +111,7 @@ export default function EmployeeAppointments() {
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
                     <div style={{ flex: 1 }}>
-                      <p style={{ fontSize: '14px', fontWeight: '700', color: '#0052cc', margin: 0 }}>
+                      <p style={{ fontSize: '14px', fontWeight: '700', color: '#0c2340', margin: 0 }}>
                         {apt.appointment_date} at {apt.appointment_time || 'N/A'}
                       </p>
                       <p style={{ fontSize: '12px', color: '#666', margin: '4px 0 0 0' }}>

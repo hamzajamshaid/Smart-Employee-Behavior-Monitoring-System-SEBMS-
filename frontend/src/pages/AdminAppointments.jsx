@@ -23,7 +23,7 @@ export default function AdminAppointments() {
     notes: ''
   });
 
-  const token = localStorage.getItem('token');
+  const token = sessionStorage.getItem('token');
   const headers = { Authorization: `Bearer ${token}` };
 
   useEffect(() => {
@@ -103,7 +103,7 @@ export default function AdminAppointments() {
 
   const cardStyle = { background: '#fff', borderRadius: '10px', padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', border: '1px solid #e8e8e8', transition: 'all 0.2s linear' };
   const durationBadge = (minutes) => {
-    const colors = { '15': '#3b82f6', '30': '#0052cc', '60': '#7c3aed', '90': '#ec4899' };
+    const colors = { '15': '#3b82f6', '30': '#0c2340', '60': '#7c3aed', '90': '#ec4899' };
     return { background: colors[minutes] + '20', color: colors[minutes], padding: '4px 12px', borderRadius: '4px', fontSize: '11px', fontWeight: '700' };
   };
 
@@ -112,10 +112,10 @@ export default function AdminAppointments() {
   return (
     <div style={{ minHeight: '100vh', background: '#f5f8fc' }}>
       {/* Sticky Header */}
-      <div style={{ position: 'sticky', top: 0, background: '#e8f0ff', borderBottom: '2px solid #0052cc', padding: '16px 30px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', zIndex: 50 }}>
+      <div style={{ position: 'sticky', top: 0, background: '#e8f1f5', borderTop: '1px solid #0c2340', borderBottom: '1px solid #0c2340', padding: '0 30px', height: '121px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', zIndex: 50 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '30px', marginBottom: '12px' }}>
           <div>
-            <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#0052cc', margin: 0, lineHeight: '1.1' }}>📅 Appointments</h1>
+            <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#0c2340', margin: 0, lineHeight: '1.1' }}><img src="/icons/nav/calendar-days-dark.png" alt="" style={{ width: '30px', height: '30px', verticalAlign: 'middle', marginRight: '10px' }} />Appointments</h1>
             <p style={{ fontSize: '13px', color: '#666', margin: '4px 0 0 0' }}>Upcoming: {upcomingAppointments.length}</p>
           </div>
           <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
@@ -136,15 +136,15 @@ export default function AdminAppointments() {
                 onChange={e => setSearchQuery(e.target.value)} 
                 onFocus={() => setShowDropdown(true)}
                 onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
-                style={{ width: '100%', padding: '10px 12px 10px 36px', border: '1px solid #0052cc', borderRadius: '6px', fontSize: '13px', boxShadow: '0 1px 3px rgba(0,82,204,0.1)', background: '#fff', color: '#1a1a1a' }}
+                style={{ width: '100%', padding: '10px 12px 10px 36px', border: '1px solid #0c2340', borderRadius: '6px', fontSize: '13px', boxShadow: '0 1px 3px rgba(12,35,64,0.1)', background: '#fff', color: '#1a1a1a' }}
               />
-              <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#0052cc' }} />
+              <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#0c2340' }} />
               
               {showDropdown && filteredEmployees.length > 0 && (
-                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#fff', border: '1px solid #0052cc', borderTop: 'none', borderRadius: '0 0 6px 6px', maxHeight: '200px', overflowY: 'auto', zIndex: 10, boxShadow: '0 4px 12px rgba(0,82,204,0.15)', marginTop: '2px' }}>
-                  <div style={{ padding: '8px 12px', cursor: 'pointer', fontSize: '13px', color: '#333', background: !selectedEmployee ? '#e8f0ff' : 'transparent', fontWeight: !selectedEmployee ? '600' : '500' }} onClick={() => { setSelectedEmployee(null); setSearchQuery(''); setShowDropdown(false); }}>All Employees</div>
+                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#fff', border: '1px solid #0c2340', borderTop: 'none', borderRadius: '0 0 6px 6px', maxHeight: '200px', overflowY: 'auto', zIndex: 10, boxShadow: '0 4px 12px rgba(12,35,64,0.15)', marginTop: '2px' }}>
+                  <div style={{ padding: '8px 12px', cursor: 'pointer', fontSize: '13px', color: '#333', background: !selectedEmployee ? '#e8f1f5' : 'transparent', fontWeight: !selectedEmployee ? '600' : '500' }} onClick={() => { setSelectedEmployee(null); setSearchQuery(''); setShowDropdown(false); }}>All Employees</div>
                   {filteredEmployees.map(e => (
-                    <div key={e.id} onClick={() => { setSelectedEmployee(e.id); setSearchQuery(''); setShowDropdown(false); }} style={{ padding: '8px 12px', cursor: 'pointer', fontSize: '13px', color: '#333', background: selectedEmployee === e.id ? '#e8f0ff' : 'transparent', borderLeft: selectedEmployee === e.id ? '3px solid #0052cc' : '3px solid transparent', fontWeight: selectedEmployee === e.id ? '600' : '500' }}>
+                    <div key={e.id} onClick={() => { setSelectedEmployee(e.id); setSearchQuery(''); setShowDropdown(false); }} style={{ padding: '8px 12px', cursor: 'pointer', fontSize: '13px', color: '#333', background: selectedEmployee === e.id ? '#e8f1f5' : 'transparent', borderLeft: selectedEmployee === e.id ? '3px solid #0c2340' : '3px solid transparent', fontWeight: selectedEmployee === e.id ? '600' : '500' }}>
                       {e.name}
                     </div>
                   ))}
@@ -159,7 +159,7 @@ export default function AdminAppointments() {
       {showCreateForm && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
           <div style={{ background: '#fff', borderRadius: '10px', padding: '24px', maxWidth: '500px', width: '90%', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 25px rgba(0,0,0,0.15)' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#0052cc', marginBottom: '16px', marginTop: 0 }}>Create Appointment</h3>
+            <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#0c2340', marginBottom: '16px', marginTop: 0 }}>Create Appointment</h3>
             <form onSubmit={handleCreateAppointment} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div>
                 <label style={{ fontSize: '12px', fontWeight: '700', color: '#666', textTransform: 'uppercase', marginBottom: '6px', display: 'block' }}>Employee *</label>
@@ -212,7 +212,7 @@ export default function AdminAppointments() {
         {selectedEmployee ? (
           // Single Employee View
           <div style={cardStyle}>
-            <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#0052cc', margin: '0 0 16px 0' }}>
+            <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#0c2340', margin: '0 0 16px 0' }}>
               {employees.find(e => e.id === selectedEmployee)?.name}
             </h2>
             <div style={{ maxHeight: '600px', overflowY: 'auto' }}>
@@ -223,7 +223,7 @@ export default function AdminAppointments() {
                   {getEmployeeAppointments(selectedEmployee).map(apt => (
                     <div key={apt.id} style={{ padding: '14px', background: '#f9fafb', borderRadius: '8px', border: '1px solid #e8e8e8', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div style={{ flex: 1 }}>
-                        <p style={{ fontSize: '13px', fontWeight: '700', color: '#0052cc', margin: 0 }}>{apt.date} at {apt.time}</p>
+                        <p style={{ fontSize: '13px', fontWeight: '700', color: '#0c2340', margin: 0 }}>{apt.date} at {apt.time}</p>
                         <p style={{ fontSize: '12px', color: '#666', margin: '2px 0 0 0' }}>{apt.notes || 'No notes'}</p>
                       </div>
                       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -244,7 +244,7 @@ export default function AdminAppointments() {
               const upcomingCount = empApts.filter(a => new Date(a.date) >= new Date()).length;
               return (
                 <div key={emp.id} style={cardStyle}>
-                  <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#0052cc', marginBottom: '12px', marginTop: 0 }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#0c2340', marginBottom: '12px', marginTop: 0 }}>
                     {emp.name}
                     <span style={{ fontSize: '12px', color: '#666', fontWeight: '500', marginLeft: '8px' }}>({upcomingCount} upcoming)</span>
                   </h3>
@@ -256,7 +256,7 @@ export default function AdminAppointments() {
                         {empApts.map(apt => (
                           <div key={apt.id} style={{ padding: '10px', background: '#f9fafb', borderRadius: '6px', fontSize: '12px', border: '1px solid #e8e8e8' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                              <span style={{ fontWeight: '700', color: '#0052cc' }}>{apt.date}</span>
+                              <span style={{ fontWeight: '700', color: '#0c2340' }}>{apt.date}</span>
                               <span style={durationBadge(apt.duration)}>{apt.duration}m</span>
                             </div>
                             <p style={{ color: '#333', margin: '0 0 4px 0', fontWeight: '500' }}>{apt.time}</p>

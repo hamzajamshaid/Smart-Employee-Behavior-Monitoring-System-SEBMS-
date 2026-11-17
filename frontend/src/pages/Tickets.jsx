@@ -43,7 +43,7 @@ const withinDate = (t, filter) => {
   return x >= new Date(now.getTime() - days * DAY_MS)
 }
 
-const btnStyle = (active, color = '#0052cc') => ({ padding: '8px 14px', borderRadius: '6px', border: `1px solid ${active ? color : '#e8e8e8'}`, background: active ? color : '#fff', color: active ? '#fff' : color, cursor: 'pointer', fontSize: '12px', fontWeight: active ? '600' : '500' })
+const btnStyle = (active, color = '#0c2340') => ({ padding: '8px 14px', borderRadius: '6px', border: `1px solid ${active ? color : '#e8e8e8'}`, background: active ? color : '#fff', color: active ? '#fff' : color, cursor: 'pointer', fontSize: '12px', fontWeight: active ? '600' : '500' })
 const inputStyle = { padding: '8px 10px', border: '1px solid #cfd8e3', borderRadius: '6px', fontSize: '13px', background: '#fff', minWidth: '150px' }
 const filterBox = { display: 'flex', flexDirection: 'column', gap: '4px' }
 const filterLabel = { fontSize: '10px', fontWeight: '700', color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px' }
@@ -68,7 +68,7 @@ export default function Tickets() {
   const [employeeFilter, setEmployeeFilter] = useState('all')
   const [dateFilter, setDateFilter] = useState('all')
 
-  const token = localStorage.getItem('token')
+  const token = sessionStorage.getItem('token')
   const headers = { 'Authorization': `Bearer ${token}` }
 
   useEffect(() => {
@@ -166,7 +166,7 @@ export default function Tickets() {
       <div key={t.id} style={{ padding: '14px 16px', background: sColor + '10', border: `2px solid ${sColor}`, borderRadius: '8px', marginBottom: '10px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', gap: '18px', alignItems: 'flex-start', flexWrap: 'wrap', flex: 1 }}>
-            <span style={{ fontSize: '12px', fontWeight: '700', color: '#fff', background: '#0052cc', borderRadius: '4px', padding: '3px 8px', marginTop: '2px' }}>#{t.id}</span>
+            <span style={{ fontSize: '12px', fontWeight: '700', color: '#fff', background: '#0c2340', borderRadius: '4px', padding: '3px 8px', marginTop: '2px' }}>#{t.id}</span>
             <Field label="Title" value={t.title || '—'} />
             <Field label="Customer" value={t.customer_name || '—'} />
             <Field label="Employee" value={t.employee_name || 'Unassigned'} />
@@ -184,7 +184,7 @@ export default function Tickets() {
               <option value="">Unassigned</option>
               {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.name}</option>)}
             </select>
-            <button onClick={() => navigate(`/tickets/${t.id}`)} disabled={updating[t.id]} style={{ fontSize: '12px', padding: '7px 12px', background: '#0052cc', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600' }}>View</button>
+            <button onClick={() => navigate(`/tickets/${t.id}`)} disabled={updating[t.id]} style={{ fontSize: '12px', padding: '7px 12px', background: '#0c2340', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600' }}>View</button>
           </div>
         </div>
       </div>
@@ -193,8 +193,8 @@ export default function Tickets() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#f5f8fc' }}>
-      <div style={{ position: 'sticky', top: 0, background: '#e8f0ff', borderBottom: '2px solid #0052cc', padding: '16px 30px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', zIndex: 50 }}>
-        <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#0052cc', margin: 0, lineHeight: '1.1' }}>🎫 Tickets</h1>
+      <div style={{ position: 'sticky', top: 0, background: '#e8f1f5', borderTop: '1px solid #0c2340', borderBottom: '1px solid #0c2340', padding: '0 30px', height: '121px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', zIndex: 50 }}>
+        <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#0c2340', margin: 0, lineHeight: '1.1' }}><img src="/icons/nav/ticket-dark.png" alt="" style={{ width: '30px', height: '30px', verticalAlign: 'middle', marginRight: '10px' }} />Tickets</h1>
         <p style={{ fontSize: '13px', color: '#666', margin: '4px 0 0 0' }}>Manage all customer support tickets · {tickets.length} total</p>
       </div>
 

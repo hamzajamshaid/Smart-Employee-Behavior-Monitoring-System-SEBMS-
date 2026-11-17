@@ -10,8 +10,8 @@ export default function Appointments() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({ appointment_date: '', service_type: 'General' });
-  const token = localStorage.getItem('token');
-  const customerId = localStorage.getItem('customer_id');
+  const token = sessionStorage.getItem('token');
+  const customerId = sessionStorage.getItem('customer_id');
   const headers = { Authorization: `Bearer ${token}` };
 
   useEffect(() => {
@@ -54,7 +54,7 @@ export default function Appointments() {
   const pastAppointments = appointments.filter(a => new Date(a.appointment_date) < new Date());
 
   const statusColor = (status) => {
-    const colors = { 'Pending': '#f59e0b', 'Confirmed': '#0052cc', 'Completed': '#10b981', 'Cancelled': '#ef4444' };
+    const colors = { 'Pending': '#f59e0b', 'Confirmed': '#0c2340', 'Completed': '#10b981', 'Cancelled': '#ef4444' };
     return colors[status] || '#6b7280';
   };
 
@@ -65,10 +65,10 @@ export default function Appointments() {
   return (
     <div style={{ minHeight: '100vh', background: '#f5f8fc' }}>
       {/* Sticky Header */}
-      <div style={{ position: 'sticky', top: 0, background: '#e8f0ff', borderBottom: '2px solid #0052cc', padding: '16px 30px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', zIndex: 50 }}>
+      <div style={{ position: 'sticky', top: 0, background: '#e8f1f5', borderTop: '1px solid #0c2340', borderBottom: '1px solid #0c2340', padding: '0 30px', height: '121px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', zIndex: 50 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '30px' }}>
           <div>
-            <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#0052cc', margin: 0, lineHeight: '1.1' }}>📅 My Appointments</h1>
+            <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#0c2340', margin: 0, lineHeight: '1.1' }}><img src="/icons/nav/calendar-days-dark.png" alt="" style={{ width: '30px', height: '30px', verticalAlign: 'middle', marginRight: '10px' }} />My Appointments</h1>
             <p style={{ fontSize: '13px', color: '#666', margin: '4px 0 0 0' }}>Upcoming: {upcomingAppointments.length}</p>
           </div>
           <button
@@ -87,7 +87,7 @@ export default function Appointments() {
       {showModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
           <div style={{ background: '#fff', borderRadius: '10px', padding: '24px', maxWidth: '400px', width: '90%', boxShadow: '0 20px 25px rgba(0,0,0,0.15)' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#0052cc', marginBottom: '16px', marginTop: 0 }}>Book an Appointment</h3>
+            <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#0c2340', marginBottom: '16px', marginTop: 0 }}>Book an Appointment</h3>
             <form onSubmit={handleBookAppointment} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div>
                 <label style={{ fontSize: '12px', fontWeight: '700', color: '#666', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Date</label>
@@ -125,7 +125,7 @@ export default function Appointments() {
       <div style={{ padding: '24px 30px' }}>
         {/* Upcoming */}
         <div style={{ marginBottom: '24px' }}>
-          <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#0052cc', marginBottom: '16px' }}>📍 Upcoming Appointments</h2>
+          <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#0c2340', marginBottom: '16px' }}>📍 Upcoming Appointments</h2>
           {upcomingAppointments.length === 0 ? (
             <div style={cardStyle}>
               <p style={{ textAlign: 'center', color: '#999', padding: '32px', fontSize: '13px', margin: 0 }}>No upcoming appointments</p>
@@ -134,7 +134,7 @@ export default function Appointments() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
               {upcomingAppointments.map(apt => (
                 <div key={apt.id} style={cardStyle}>
-                  <p style={{ fontSize: '14px', fontWeight: '700', color: '#0052cc', margin: '0 0 8px 0' }}>📅 {apt.appointment_date}</p>
+                  <p style={{ fontSize: '14px', fontWeight: '700', color: '#0c2340', margin: '0 0 8px 0' }}>📅 {apt.appointment_date}</p>
                   <p style={{ fontSize: '13px', color: '#333', margin: '0 0 4px 0' }}><strong>Service:</strong> {apt.service_type || 'General'}</p>
                   <p style={{ fontSize: '13px', color: '#333', margin: '0 0 4px 0' }}><strong>Vehicle:</strong> {apt.vehicle_model || 'N/A'}</p>
                   <div style={{ display: 'flex', gap: '8px', justifyContent: 'space-between', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #e8e8e8' }}>
@@ -151,7 +151,7 @@ export default function Appointments() {
         {/* Past */}
         {pastAppointments.length > 0 && (
           <div>
-            <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#0052cc', marginBottom: '16px' }}>📋 Past Appointments</h2>
+            <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#0c2340', marginBottom: '16px' }}>📋 Past Appointments</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
               {pastAppointments.map(apt => (
                 <div key={apt.id} style={{ ...cardStyle, opacity: 0.7 }}>

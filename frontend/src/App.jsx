@@ -25,15 +25,14 @@ import EmployeeDetail from './pages/EmployeeDetail'
 import EmployeeDashboard from './pages/EmployeeDashboard'
 import EmployeeTickets from './pages/EmployeeTickets'
 import EmployeeAppointments from './pages/EmployeeAppointments'
-import Attendance from './pages/Attendance'
 import EmployeeTicketDetail from './pages/EmployeeTicketDetail'
-import SimulationCapture from './pages/SimulationCapture'
 
 // Customer Pages
 import CustomerDashboard from './pages/CustomerDashboard'
 import CustomerTickets from './pages/CustomerTickets'
 import Appointments from './pages/Appointments'
 import CustomerTicketDetail from './pages/CustomerTicketDetail'
+import CreateCustomerTicket from './pages/CreateCustomerTicket'
 
 // Components
 import Sidebar from './components/Sidebar'
@@ -45,7 +44,7 @@ function Loading() {
 
 // Main Layout Component
 function MainLayout() {
-  const userRole = localStorage.getItem('role')
+  const userRole = sessionStorage.getItem('role')
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f5f8fc' }}>
@@ -65,8 +64,8 @@ function MainLayout() {
 
 // Protected Route Component
 function ProtectedRoute({ children, requiredRole }) {
-  const token = localStorage.getItem('token')
-  const role = localStorage.getItem('role')
+  const token = sessionStorage.getItem('token')
+  const role = sessionStorage.getItem('role')
 
   if (!token) {
     return <Navigate to="/" replace />
@@ -120,13 +119,12 @@ export default function App() {
           <Route path="/employee-tickets" element={<ProtectedRoute requiredRole="Employee"><EmployeeTickets /></ProtectedRoute>} />
           <Route path="/employee-tickets/:id" element={<ProtectedRoute requiredRole="Employee"><EmployeeTicketDetail /></ProtectedRoute>} />
           <Route path="/employee-appointments" element={<ProtectedRoute requiredRole="Employee"><EmployeeAppointments /></ProtectedRoute>} />
-          <Route path="/attendance" element={<ProtectedRoute requiredRole="Employee"><Attendance /></ProtectedRoute>} />
-          <Route path="/simulate" element={<ProtectedRoute requiredRole="Employee"><SimulationCapture /></ProtectedRoute>} />
           <Route path="/counter" element={<ProtectedRoute requiredRole="Employee"><CounterSession /></ProtectedRoute>} />
 
           {/* CUSTOMER ROUTES */}
           <Route path="/customer-dashboard" element={<ProtectedRoute requiredRole="Customer"><CustomerDashboard /></ProtectedRoute>} />
           <Route path="/customer-tickets" element={<ProtectedRoute requiredRole="Customer"><CustomerTickets /></ProtectedRoute>} />
+          <Route path="/customer-tickets/new" element={<ProtectedRoute requiredRole="Customer"><CreateCustomerTicket /></ProtectedRoute>} />
           <Route path="/customer-tickets/:id" element={<ProtectedRoute requiredRole="Customer"><CustomerTicketDetail /></ProtectedRoute>} />
           <Route path="/appointments" element={<ProtectedRoute requiredRole="Customer"><Appointments /></ProtectedRoute>} />
         </Route>

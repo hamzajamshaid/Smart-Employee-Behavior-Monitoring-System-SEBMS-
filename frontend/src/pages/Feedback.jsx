@@ -41,7 +41,7 @@ const dayStart = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
 
 const getRatingColor = (rating) => (rating >= 4 ? '#10b981' : rating >= 3 ? '#f59e0b' : '#ef4444');
 
-const btnStyle = (active) => ({ padding: '8px 16px', borderRadius: '6px', border: `1px solid ${active ? '#0052cc' : '#e8e8e8'}`, background: active ? '#0052cc' : '#fff', color: active ? '#fff' : '#0052cc', cursor: 'pointer', fontSize: '13px', fontWeight: active ? '600' : '500', transition: 'all 0.15s' });
+const btnStyle = (active) => ({ padding: '8px 16px', borderRadius: '6px', border: `1px solid ${active ? '#0c2340' : '#e8e8e8'}`, background: active ? '#0c2340' : '#fff', color: active ? '#fff' : '#0c2340', cursor: 'pointer', fontSize: '13px', fontWeight: active ? '600' : '500', transition: 'all 0.15s' });
 const inputStyle = { padding: '8px 10px', border: '1px solid #cfd8e3', borderRadius: '6px', fontSize: '13px', background: '#fff', minWidth: '150px' };
 const filterBox = { display: 'flex', flexDirection: 'column', gap: '4px' };
 const filterLabel = { fontSize: '10px', fontWeight: '700', color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px' };
@@ -55,7 +55,7 @@ const Field = ({ label, value }) => (
 
 export default function Feedback() {
   const navigate = useNavigate();
-  const token = localStorage.getItem('token');
+  const token = sessionStorage.getItem('token');
   const [feedbackList, setFeedbackList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterRating, setFilterRating] = useState('all');
@@ -112,7 +112,7 @@ export default function Feedback() {
       <div key={f.id} style={{ padding: '14px 16px', background: color + '10', border: `2px solid ${color}`, borderRadius: '8px', marginBottom: '10px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', gap: '18px', alignItems: 'flex-start', flexWrap: 'wrap', flex: 1 }}>
-            <span style={{ fontSize: '12px', fontWeight: '700', color: '#fff', background: '#0052cc', borderRadius: '4px', padding: '3px 8px', marginTop: '2px' }}>#{f.id}</span>
+            <span style={{ fontSize: '12px', fontWeight: '700', color: '#fff', background: '#0c2340', borderRadius: '4px', padding: '3px 8px', marginTop: '2px' }}>#{f.id}</span>
             <Field label="Customer" value={f.customer_name || 'Anonymous'} />
             <Field label="Employee" value={f.employee_name || 'Unknown'} />
             <Field label="Session" value={f.interaction_id ?? '—'} />
@@ -132,10 +132,10 @@ export default function Feedback() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#f5f8fc' }}>
-      <div style={{ position: 'sticky', top: 0, background: '#e8f0ff', borderBottom: '2px solid #0052cc', padding: '16px 30px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', zIndex: 50 }}>
+      <div style={{ position: 'sticky', top: 0, background: '#e8f1f5', borderTop: '1px solid #0c2340', borderBottom: '1px solid #0c2340', padding: '0 30px', height: '121px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', zIndex: 50 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '30px' }}>
           <div>
-            <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#0052cc', margin: 0, lineHeight: '1.1' }}>⭐ Feedback</h1>
+            <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#0c2340', margin: 0, lineHeight: '1.1' }}><img src="/icons/nav/message-square-dark.png" alt="" style={{ width: '30px', height: '30px', verticalAlign: 'middle', marginRight: '10px' }} />Feedback</h1>
             <p style={{ fontSize: '13px', color: '#666', margin: '4px 0 0 0' }}>Customer reviews and ratings</p>
           </div>
           <div style={{ textAlign: 'right' }}>

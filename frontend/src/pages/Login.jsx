@@ -43,18 +43,18 @@ export default function Login() {
         throw new Error('No token in response');
       }
 
-      localStorage.setItem('token', token);
-      localStorage.setItem('role', res.data.role || role);
+      sessionStorage.setItem('token', token);
+      sessionStorage.setItem('role', res.data.role || role);
 
       // Store role-specific data
       if (role === 'Admin') {
-        localStorage.setItem('user', JSON.stringify({ name: res.data.username || username, role: 'Admin' }));
+        sessionStorage.setItem('user', JSON.stringify({ name: res.data.username || username, role: 'Admin' }));
       } else if (role === 'Employee') {
-        localStorage.setItem('employee_id', res.data.employee_id);
-        localStorage.setItem('name', res.data.name);
+        sessionStorage.setItem('employee_id', res.data.employee_id);
+        sessionStorage.setItem('name', res.data.name);
       } else if (role === 'Customer') {
-        localStorage.setItem('customer_id', res.data.customer_id);
-        localStorage.setItem('name', res.data.name);
+        sessionStorage.setItem('customer_id', res.data.customer_id);
+        sessionStorage.setItem('name', res.data.name);
       }
 
       // Redirect based on role
@@ -257,6 +257,19 @@ export default function Login() {
             {loading ? 'Signing In...' : 'Sign In'}
           </button>
         </form>
+
+        {role === 'Customer' && (
+          <p style={{ textAlign: 'center', marginTop: '16px', fontSize: '13px', color: '#3d5a80' }}>
+            New customer?{' '}
+            <button
+              type="button"
+              onClick={() => navigate('/customer-register')}
+              style={{ background: 'none', border: 'none', color: '#13315c', fontWeight: '700', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
+            >
+              Create an account
+            </button>
+          </p>
+        )}
 
         {/* Demo Credentials */}
         <div style={{

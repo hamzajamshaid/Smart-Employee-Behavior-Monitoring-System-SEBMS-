@@ -13,9 +13,9 @@ export default function CustomerDashboard() {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const token = localStorage.getItem('token');
-  const customerId = localStorage.getItem('customer_id');
-  const customerName = localStorage.getItem('name');
+  const token = sessionStorage.getItem('token');
+  const customerId = sessionStorage.getItem('customer_id');
+  const customerName = sessionStorage.getItem('name');
   const headers = { Authorization: `Bearer ${token}` };
 
   useEffect(() => {
@@ -75,13 +75,13 @@ export default function CustomerDashboard() {
         }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .card-hover { transition: all 0.2s linear; }
-        .card-hover:hover { box-shadow: 0 8px 24px rgba(0,82,204,0.15); transform: translateY(-2px); }
+        .card-hover:hover { box-shadow: 0 8px 24px rgba(12,35,64,0.15); transform: translateY(-2px); }
       `}</style>
 
       {/* Sticky Header */}
-      <div style={{ position: 'sticky', top: 0, background: '#e8f0ff', borderBottom: '2px solid #0052cc', padding: '16px 30px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', zIndex: 50 }}>
+      <div style={{ position: 'sticky', top: 0, background: '#e8f1f5', borderTop: '1px solid #0c2340', borderBottom: '1px solid #0c2340', padding: '0 30px', height: '121px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', zIndex: 50 }}>
         <div>
-          <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#0052cc', margin: 0, lineHeight: '1.1' }}>Welcome, {customerName}!</h1>
+          <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#0c2340', margin: 0, lineHeight: '1.1' }}>Welcome, {customerName}!</h1>
           <p style={{ fontSize: '13px', color: '#666', margin: '4px 0 0 0' }}>Your customer dashboard</p>
         </div>
       </div>
@@ -91,7 +91,7 @@ export default function CustomerDashboard() {
         {/* KPI Cards */}
         {summary || !loading ? (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '12px' }}>
-            <div className="card-hover" style={{ animation: 'fadeIn 0.3s ease-out' }}><KPICard label="Total Appointments" value={appointments.length} sub="All time" color="#0052cc" /></div>
+            <div className="card-hover" style={{ animation: 'fadeIn 0.3s ease-out' }}><KPICard label="Total Appointments" value={appointments.length} sub="All time" color="#0c2340" /></div>
             <div className="card-hover" style={{ animation: 'fadeIn 0.3s ease-out 0.05s both' }}><KPICard label="Upcoming" value={upcomingAppointments.length} sub="Next bookings" color="#00a86b" /></div>
             <div className="card-hover" style={{ animation: 'fadeIn 0.3s ease-out 0.1s both' }}><KPICard label="Total Tickets" value={tickets.length} sub="Support requests" color="#ff9500" /></div>
             <div className="card-hover" style={{ animation: 'fadeIn 0.3s ease-out 0.15s both' }}><KPICard label="Open Tickets" value={openTickets.length} sub="Pending" color="#ef4444" /></div>
@@ -109,14 +109,14 @@ export default function CustomerDashboard() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
           {/* Upcoming Appointments */}
           <div style={cardStyle}>
-            <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#0052cc', marginBottom: '14px', marginTop: 0 }}>📅 Upcoming Appointments</h3>
+            <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#0c2340', marginBottom: '14px', marginTop: 0 }}>📅 Upcoming Appointments</h3>
             {upcomingAppointments.length === 0 ? (
               <p style={{ textAlign: 'center', color: '#999', padding: '32px', fontSize: '13px' }}>No upcoming appointments</p>
             ) : (
               <div style={{ maxHeight: '345px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {upcomingAppointments.slice(0, 5).map(apt => (
-                  <div key={apt.id} style={{ padding: '10px', background: '#f9fafb', borderRadius: '6px', fontSize: '12px', border: '1px solid #e8e8e8', cursor: 'pointer', transition: 'all 0.15s' }} onMouseEnter={e => { e.currentTarget.style.background = '#e8f0ff'; e.currentTarget.style.transform = 'translateX(4px)'; }} onMouseLeave={e => { e.currentTarget.style.background = '#f9fafb'; e.currentTarget.style.transform = 'translateX(0)'; }}>
-                    <p style={{ fontWeight: '700', color: '#0052cc', margin: 0 }}>{apt.appointment_date}</p>
+                  <div key={apt.id} style={{ padding: '10px', background: '#f9fafb', borderRadius: '6px', fontSize: '12px', border: '1px solid #e8e8e8', cursor: 'pointer', transition: 'all 0.15s' }} onMouseEnter={e => { e.currentTarget.style.background = '#e8f1f5'; e.currentTarget.style.transform = 'translateX(4px)'; }} onMouseLeave={e => { e.currentTarget.style.background = '#f9fafb'; e.currentTarget.style.transform = 'translateX(0)'; }}>
+                    <p style={{ fontWeight: '700', color: '#0c2340', margin: 0 }}>{apt.appointment_date}</p>
                     <p style={{ color: '#666', fontSize: '11px', margin: '2px 0 0 0' }}>Service: {apt.service_type || 'General'}</p>
                   </div>
                 ))}
@@ -124,8 +124,8 @@ export default function CustomerDashboard() {
             )}
             <button
               onClick={() => navigate('/appointments')}
-              style={{ width: '100%', marginTop: '12px', padding: '10px', background: '#0052cc', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', transition: 'all 0.15s' }}
-              onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-2px)', e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,82,204,0.2)')}
+              style={{ width: '100%', marginTop: '12px', padding: '10px', background: '#0c2340', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', transition: 'all 0.15s' }}
+              onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-2px)', e.currentTarget.style.boxShadow = '0 4px 12px rgba(12,35,64,0.2)')}
               onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)', e.currentTarget.style.boxShadow = 'none')}
             >
               View All
@@ -134,7 +134,7 @@ export default function CustomerDashboard() {
 
           {/* Recent Tickets */}
           <div style={cardStyle}>
-            <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#0052cc', marginBottom: '14px', marginTop: 0 }}>🎫 Support Tickets</h3>
+            <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#0c2340', marginBottom: '14px', marginTop: 0 }}>🎫 Support Tickets</h3>
             {tickets.length === 0 ? (
               <p style={{ textAlign: 'center', color: '#999', padding: '32px', fontSize: '13px' }}>No tickets created</p>
             ) : (
@@ -144,7 +144,7 @@ export default function CustomerDashboard() {
                   return (
                     <div key={ticket.id} style={{ padding: '10px', background: '#f9fafb', borderRadius: '6px', fontSize: '12px', border: '1px solid #e8e8e8', cursor: 'pointer', transition: 'all 0.15s' }} onMouseEnter={e => { e.currentTarget.style.background = statusColor + '15'; e.currentTarget.style.transform = 'translateX(4px)'; }} onMouseLeave={e => { e.currentTarget.style.background = '#f9fafb'; e.currentTarget.style.transform = 'translateX(0)'; }} onClick={() => navigate(`/customer-tickets/${ticket.id}`)}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                        <p style={{ fontWeight: '700', color: '#0052cc', margin: 0 }}>#{ticket.id}</p>
+                        <p style={{ fontWeight: '700', color: '#0c2340', margin: 0 }}>#{ticket.id}</p>
                         <span style={{ padding: '2px 8px', background: statusColor + '20', color: statusColor, borderRadius: '3px', fontSize: '10px', fontWeight: '700' }}>{ticket.status}</span>
                       </div>
                       <p style={{ color: '#666', margin: 0 }}>{ticket.title}</p>
@@ -155,8 +155,8 @@ export default function CustomerDashboard() {
             )}
             <button
               onClick={() => navigate('/customer-tickets')}
-              style={{ width: '100%', marginTop: '12px', padding: '10px', background: '#0052cc', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', transition: 'all 0.15s' }}
-              onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-2px)', e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,82,204,0.2)')}
+              style={{ width: '100%', marginTop: '12px', padding: '10px', background: '#0c2340', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', transition: 'all 0.15s' }}
+              onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-2px)', e.currentTarget.style.boxShadow = '0 4px 12px rgba(12,35,64,0.2)')}
               onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)', e.currentTarget.style.boxShadow = 'none')}
             >
               View All

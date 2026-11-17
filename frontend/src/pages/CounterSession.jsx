@@ -10,7 +10,7 @@ const LIVE_CHUNK_MS = 12000;
 const FRAME_MS = 2000;
 
 export default function CounterSession() {
-  const token = localStorage.getItem('token');
+  const token = sessionStorage.getItem('token');
   const headers = { Authorization: `Bearer ${token}` };
 
   const videoRef = useRef(null);
@@ -231,7 +231,9 @@ export default function CounterSession() {
 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: 24 }}>
-      <h2>Counter session</h2>
+      <div style={{ display: 'flex', alignItems: 'center', height: 121, boxSizing: 'border-box', padding: '0 30px', margin: '-24px -24px 24px', background: '#e8f1f5', borderTop: '1px solid #0c2340', borderBottom: '1px solid #0c2340' }}>
+        <h1 style={{ fontSize: 32, fontWeight: 800, color: '#0c2340', margin: 0, lineHeight: 1.1, display: 'flex', alignItems: 'center' }}><img src="/icons/nav/counter-dark.png" alt="" style={{ width: 30, height: 30, marginRight: 10 }} />Counter session</h1>
+      </div>
       <div style={{ background: '#fff3cd', padding: 12, borderRadius: 8, marginBottom: 16 }}>
         Notice: this counter records audio and video during your visit to improve service. Recordings are used only for service analysis.
       </div>

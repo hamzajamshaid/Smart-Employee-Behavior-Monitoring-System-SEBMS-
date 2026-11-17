@@ -4,6 +4,16 @@ from datetime import datetime
 
 tickets_bp = Blueprint('tickets', __name__)
 
+def _sender_name(session, m):
+    from app.models import Customer, Employee
+    if m.sender_type == 'Customer':
+        c = session.query(Customer).filter_by(id=m.sender_id).first()
+        return c.full_name if c else 'Customer'
+    if m.sender_type == 'Employee':
+        e = session.query(Employee).filter_by(id=m.sender_id).first()
+        return e.name if e else 'Employee'
+    return 'Support'
+
 def _ticket_visible(t):
     role, uid = get_jwt().get('role'), int(get_jwt_identity())
     if role == 'Admin':
@@ -246,6 +256,57 @@ def update_ticket(ticket_id):
     except Exception as e:
         return jsonify({'error': f'Server error: {str(e)}'}), 500
 
+@tickets_bp.route('/tickets/<int:ticket_id>/resolve', methods=['PUT'])
+@jwt_required()
+def customer_resolve_ticket(ticket_id):
+    try:
+        user_id = int(get_jwt_identity())
+        if get_jwt().get('role') != 'Customer':
+            return jsonify({'error': 'Customer role required'}), 403
+        session = current_app.SessionLocal()
+        try:
+            from app.models import Ticket
+            ticket = session.query(Ticket).filter_by(id=ticket_id).first()
+            if not ticket or ticket.customer_id != user_id:
+                return jsonify({'error': 'Ticket not found'}), 404
+            if ticket.status == 'Resolved':
+                return jsonify({'error': 'Ticket is already resolved'}), 400
+            ticket.status = 'Resolved'
+            ticket.updated_at = datetime.utcnow()
+            session.commit()
+            return jsonify({'id': ticket.id, 'status': ticket.status, 'message': 'Ticket marked as resolved'}), 200
+        finally:
+            session.close()
+    except Exception as e:
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
+
+@tickets_bp.route('/tickets/<int:ticket_id>/rate', methods=['PUT'])
+@jwt_required()
+def customer_rate_ticket(ticket_id):
+    try:
+        user_id = int(get_jwt_identity())
+        if get_jwt().get('role') != 'Customer':
+            return jsonify({'error': 'Customer role required'}), 403
+        session = current_app.SessionLocal()
+        try:
+            from app.models import Ticket
+            ticket = session.query(Ticket).filter_by(id=ticket_id).first()
+            if not ticket or ticket.customer_id != user_id:
+                return jsonify({'error': 'Ticket not found'}), 404
+            if ticket.status != 'Resolved':
+                return jsonify({'error': 'Only resolved tickets can be rated'}), 400
+            stars = (request.get_json() or {}).get('customer_rating')
+            if not isinstance(stars, int) or not 1 <= stars <= 5:
+                return jsonify({'error': 'Rating must be 1 to 5'}), 400
+            ticket.customer_rating = stars
+            ticket.updated_at = datetime.utcnow()
+            session.commit()
+            return jsonify({'id': ticket.id, 'customer_rating': stars, 'message': 'Thank you for rating'}), 200
+        finally:
+            session.close()
+    except Exception as e:
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
+
 @tickets_bp.route('/tickets/<int:ticket_id>/messages', methods=['GET'])
 @jwt_required()
 def get_ticket_messages(ticket_id):
@@ -270,7 +331,8 @@ def get_ticket_messages(ticket_id):
                     'sender_type': m.sender_type,
                     'sender_id': m.sender_id,
                     'message': m.message,
-                    'sent_at': m.sent_at.isoformat() if m.sent_at else None
+                    'sent_at': m.sent_at.isoformat() if m.sent_at else None,
+                    'sender_name': _sender_name(session, m)
                 })
             
             return jsonify(result), 200

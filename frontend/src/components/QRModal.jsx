@@ -42,7 +42,7 @@ export default function QRModal({ interactionId, onClose }) {
 
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-          <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#0052cc', margin: 0 }}>Customer Feedback QR Code</h2>
+          <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#0c2340', margin: 0 }}>Customer Feedback QR Code</h2>
           <button
             onClick={onClose}
             style={{
@@ -73,7 +73,7 @@ export default function QRModal({ interactionId, onClose }) {
         {/* QR Code Container */}
         <div style={{
           background: '#f5f8fc',
-          border: '2px dashed #0052cc',
+          border: '2px dashed #0c2340',
           borderRadius: '12px',
           padding: '24px',
           display: 'flex',
@@ -88,7 +88,7 @@ export default function QRModal({ interactionId, onClose }) {
               size={280}
               level="H"
               includeMargin={true}
-              fgColor="#0052cc"
+              fgColor="#0c2340"
               bgColor="#ffffff"
             />
           </div>
@@ -118,7 +118,7 @@ export default function QRModal({ interactionId, onClose }) {
               alert('Link copied to clipboard!')
             }}
             style={{
-              background: '#0052cc',
+              background: '#0c2340',
               color: '#fff',
               border: 'none',
               padding: '6px 12px',
@@ -129,8 +129,8 @@ export default function QRModal({ interactionId, onClose }) {
               whiteSpace: 'nowrap',
               transition: 'all 0.15s'
             }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#003d99')}
-            onMouseLeave={e => (e.currentTarget.style.background = '#0052cc')}
+            onMouseEnter={e => (e.currentTarget.style.background = '#13315c')}
+            onMouseLeave={e => (e.currentTarget.style.background = '#0c2340')}
           >
             Copy
           </button>

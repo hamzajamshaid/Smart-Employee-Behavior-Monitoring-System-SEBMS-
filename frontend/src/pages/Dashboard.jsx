@@ -149,7 +149,7 @@ export default function Dashboard() {
   const runBatch = async (ids = []) => {
     let taskId = null
     try {
-      const token = localStorage.getItem('token')
+      const token = sessionStorage.getItem('token')
       const res = await axios.post(`${API_BASE}/api/batch/trigger`, { interaction_ids: ids }, { headers: { Authorization: `Bearer ${token}` } })
       taskId = res.data.task_id || null
       setBatchMsg(ids.length ? `Session #${ids[0]} queued for processing` : 'Batch queued (last 24 hours)')
@@ -163,7 +163,7 @@ export default function Dashboard() {
   const [showDropdown, setShowDropdown] = useState(false)
   const [topPerformers, setTopPerformers] = useState([])
 
-  const token = localStorage.getItem('token')
+  const token = sessionStorage.getItem('token')
   const headers = { Authorization: `Bearer ${token}` }
   const filteredEmployees = employees.filter(e => e.name.toLowerCase().includes(searchQuery.toLowerCase()))
   const selectedEmpName = employees.find(e => e.id === selectedEmp)?.name || 'All Employees'
@@ -256,7 +256,7 @@ export default function Dashboard() {
       `}</style>
 
       {/* Sticky Header */}
-      <div style={{ position: 'sticky', top: 0, background: '#e8f1f5', borderBottom: '2px solid #0c2340', padding: '16px 30px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', zIndex: 50 }}>
+      <div style={{ position: 'sticky', top: 0, background: '#e8f1f5', borderTop: '1px solid #0c2340', borderBottom: '1px solid #0c2340', padding: '0 30px', height: '121px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', zIndex: 50 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '30px', marginBottom: '12px' }}>
           <div style={{ flex: 1 }}>
             <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#0c2340', margin: 0, lineHeight: '1.1' }}>Performance Dashboard</h1>

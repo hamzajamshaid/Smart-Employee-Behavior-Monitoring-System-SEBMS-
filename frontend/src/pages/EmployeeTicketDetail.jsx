@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Send } from 'lucide-react';
 import axios from 'axios';
@@ -12,9 +12,14 @@ export default function EmployeeTicketDetail() {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const token = localStorage.getItem('token');
-  const employeeId = localStorage.getItem('employee_id');
-  const employeeName = localStorage.getItem('name');
+  const messagesRef = useRef(null);
+
+  useEffect(() => {
+    if (messagesRef.current) messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
+  }, [messages.length]);
+  const token = sessionStorage.getItem('token');
+  const employeeId = sessionStorage.getItem('employee_id');
+  const employeeName = sessionStorage.getItem('name');
   const headers = { Authorization: `Bearer ${token}` };
 
   useEffect(() => {
@@ -25,9 +30,14 @@ export default function EmployeeTicketDetail() {
     fetchTicket();
   }, [token, employeeId, id, navigate]);
 
+  useEffect(() => {
+    if (!token || !employeeId) return;
+    const timer = setInterval(() => { fetchTicket(); }, 5000);
+    return () => clearInterval(timer);
+  }, [token, employeeId, id]);
+
   const fetchTicket = async () => {
     try {
-      setLoading(true);
       const res = await axios.get(`${API_BASE}/api/tickets/${id}`, { headers });
       setTicket(res.data);
       
@@ -74,16 +84,16 @@ export default function EmployeeTicketDetail() {
   return (
     <div style={{ minHeight: '100vh', background: '#f5f8fc' }}>
       {/* Sticky Header */}
-      <div style={{ position: 'sticky', top: 0, background: '#e8f0ff', borderBottom: '2px solid #0052cc', padding: '16px 30px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', zIndex: 50 }}>
+      <div style={{ position: 'sticky', top: 0, background: '#e8f1f5', borderTop: '1px solid #0c2340', borderBottom: '1px solid #0c2340', padding: '0 30px', height: '121px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', zIndex: 50 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <button
             onClick={() => navigate('/employee-tickets')}
             style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', padding: '8px' }}
           >
-            <ArrowLeft size={24} color="#0052cc" />
+            <ArrowLeft size={24} color="#0c2340" />
           </button>
           <div style={{ flex: 1 }}>
-            <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#0052cc', margin: 0 }}>#{ticket.id} - {ticket.title}</h1>
+            <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#0c2340', margin: 0 }}>#{ticket.id} - {ticket.title}</h1>
             <p style={{ fontSize: '13px', color: '#666', margin: '4px 0 0 0' }}>From {ticket.customer_name || 'N/A'}</p>
           </div>
           <span style={{ padding: '6px 14px', background: statusColor(ticket.status) + '20', color: statusColor(ticket.status), borderRadius: '6px', fontSize: '12px', fontWeight: '700', textTransform: 'uppercase' }}>
@@ -96,7 +106,7 @@ export default function EmployeeTicketDetail() {
       <div style={{ padding: '24px 30px' }}>
         {/* Ticket Details */}
         <div style={{ ...cardStyle, marginBottom: '24px' }}>
-          <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#0052cc', marginTop: 0, marginBottom: '16px' }}>Ticket Details</h3>
+          <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#0c2340', marginTop: 0, marginBottom: '16px' }}>Ticket Details</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '16px' }}>
             <div>
               <p style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase', fontWeight: '700', margin: '0 0 4px 0' }}>Type</p>
@@ -125,23 +135,23 @@ export default function EmployeeTicketDetail() {
 
         {/* Messages */}
         <div style={cardStyle}>
-          <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#0052cc', marginTop: 0, marginBottom: '16px' }}>Conversation</h3>
+          <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#0c2340', marginTop: 0, marginBottom: '16px' }}>Conversation</h3>
           
-          <div style={{ maxHeight: '400px', overflowY: 'auto', marginBottom: '16px', borderBottom: '1px solid #e8e8e8', paddingBottom: '16px' }}>
+          <div ref={messagesRef} style={{ maxHeight: '400px', overflowY: 'auto', marginBottom: '16px', borderBottom: '1px solid #e8e8e8', paddingBottom: '16px' }}>
             {messages.length === 0 ? (
               <p style={{ textAlign: 'center', color: '#999', fontSize: '13px', padding: '32px 0' }}>No messages yet</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {messages.map(msg => (
                   <div key={msg.id} style={{ display: 'flex', gap: '12px', flexDirection: msg.sender_type === 'Employee' ? 'row-reverse' : 'row' }}>
-                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: msg.sender_type === 'Employee' ? '#0052cc' : '#e8e8e8', color: msg.sender_type === 'Employee' ? '#fff' : '#333', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '700', flexShrink: 0 }}>
-                      {msg.sender_type === 'Employee' ? '👤' : '🧑'}
+                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: msg.sender_type === 'Employee' ? '#0c2340' : '#e8e8e8', color: msg.sender_type === 'Employee' ? '#fff' : '#333', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '700', flexShrink: 0 }}>
+                      <img src={msg.sender_type === 'Employee' ? '/icons/comm/headset-white.png' : '/icons/comm/user-round-dark.png'} alt="" style={{ width: '18px', height: '18px' }} />
                     </div>
                     <div style={{ flex: 1 }}>
                       <p style={{ fontSize: '11px', color: '#999', margin: '0 0 4px 0', fontWeight: '600' }}>
-                        {msg.sender_type === 'Employee' ? employeeName : 'Customer'} • {new Date(msg.created_at).toLocaleDateString()}
+                        {msg.sender_name || (msg.sender_type === 'Employee' ? employeeName : 'Customer')} • {new Date(msg.sent_at).toLocaleDateString()}
                       </p>
-                      <div style={{ background: msg.sender_type === 'Employee' ? '#e8f0ff' : '#f9fafb', padding: '10px 12px', borderRadius: '8px', fontSize: '13px', color: '#333' }}>
+                      <div style={{ background: msg.sender_type === 'Employee' ? '#e8f1f5' : '#f9fafb', padding: '10px 12px', borderRadius: '8px', fontSize: '13px', color: '#333' }}>
                         {msg.message}
                       </div>
                     </div>
@@ -173,7 +183,7 @@ export default function EmployeeTicketDetail() {
               disabled={sending || !newMessage.trim()}
               style={{
                 padding: '10px 16px',
-                background: sending || !newMessage.trim() ? '#d1d5db' : '#0052cc',
+                background: sending || !newMessage.trim() ? '#d1d5db' : '#0c2340',
                 color: '#fff',
                 border: 'none',
                 borderRadius: '6px',

@@ -44,10 +44,10 @@ export default function CustomerRegister() {
         password: formData.password
       })
 
-      localStorage.setItem('token', res.data.token)
-      localStorage.setItem('role', res.data.role)
-      localStorage.setItem('customer_id', res.data.customer_id)
-      localStorage.setItem('name', res.data.name)
+      sessionStorage.setItem('token', res.data.token)
+      sessionStorage.setItem('role', res.data.role)
+      sessionStorage.setItem('customer_id', res.data.customer_id)
+      sessionStorage.setItem('name', res.data.name)
 
       navigate('/customer-dashboard')
     } catch (err) {
@@ -60,7 +60,7 @@ export default function CustomerRegister() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #E8B84B 0%, #D68910 100%)',
+      background: 'linear-gradient(135deg, #0c2340 0%, #13315c 100%)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -74,7 +74,7 @@ export default function CustomerRegister() {
         width: '100%',
         boxShadow: '0 10px 40px rgba(0,0,0,0.2)'
       }}>
-        <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#E8B84B', marginBottom: '8px', textAlign: 'center' }}>
+        <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#13315c', marginBottom: '8px', textAlign: 'center' }}>
           Create Account
         </h1>
         <p style={{ fontSize: '13px', color: '#888', textAlign: 'center', marginBottom: '24px' }}>
@@ -97,7 +97,7 @@ export default function CustomerRegister() {
 
         <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#E8B84B', marginBottom: '6px' }}>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#13315c', marginBottom: '6px' }}>
               Full Name
             </label>
             <input
@@ -118,7 +118,7 @@ export default function CustomerRegister() {
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#E8B84B', marginBottom: '6px' }}>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#13315c', marginBottom: '6px' }}>
               Phone Number
             </label>
             <input
@@ -140,7 +140,7 @@ export default function CustomerRegister() {
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#E8B84B', marginBottom: '6px' }}>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#13315c', marginBottom: '6px' }}>
               Email (optional)
             </label>
             <input
@@ -160,7 +160,7 @@ export default function CustomerRegister() {
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#E8B84B', marginBottom: '6px' }}>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#13315c', marginBottom: '6px' }}>
               Password
             </label>
             <input
@@ -181,7 +181,7 @@ export default function CustomerRegister() {
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#E8B84B', marginBottom: '6px' }}>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#13315c', marginBottom: '6px' }}>
               Confirm Password
             </label>
             <input
@@ -206,7 +206,7 @@ export default function CustomerRegister() {
             disabled={loading}
             style={{
               padding: '12px',
-              background: loading ? '#aaa' : '#E8B84B',
+              background: loading ? '#aaa' : '#13315c',
               color: 'white',
               border: 'none',
               borderRadius: '8px',
@@ -226,7 +226,7 @@ export default function CustomerRegister() {
             style={{
               background: 'none',
               border: 'none',
-              color: '#E8B84B',
+              color: '#13315c',
               cursor: 'pointer',
               fontSize: '13px',
               fontWeight: '600'

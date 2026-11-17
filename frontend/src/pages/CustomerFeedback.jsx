@@ -104,7 +104,7 @@ export default function CustomerFeedback() {
       <div style={{ maxWidth: '600px', margin: '0 auto' }}>
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#0052cc', margin: '0 0 8px 0' }}>Your Feedback Matters</h1>
+          <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#0c2340', margin: '0 0 8px 0' }}>Your Feedback Matters</h1>
           <p style={{ fontSize: '14px', color: '#666', margin: 0 }}>Help us improve by sharing your experience</p>
         </div>
 
@@ -120,9 +120,9 @@ export default function CustomerFeedback() {
           <div style={cardStyle}>
             {/* Interaction Info */}
             {interaction && (
-              <div style={{ background: '#e8f0ff', border: '1px solid #0052cc', borderRadius: '8px', padding: '14px', marginBottom: '20px' }}>
+              <div style={{ background: '#e8f1f5', border: '1px solid #0c2340', borderRadius: '8px', padding: '14px', marginBottom: '20px' }}>
                 <p style={{ fontSize: '12px', color: '#666', margin: '0 0 4px 0' }}>Employee</p>
-                <p style={{ fontSize: '14px', fontWeight: '700', color: '#0052cc', margin: 0 }}>
+                <p style={{ fontSize: '14px', fontWeight: '700', color: '#0c2340', margin: 0 }}>
                   {interaction?.employee_name || 'Service Representative'}
                 </p>
               </div>
@@ -173,7 +173,7 @@ export default function CustomerFeedback() {
                     </button>
                   ))}
                 </div>
-                <p style={{ fontSize: '12px', color: '#0052cc', fontWeight: '600', textAlign: 'center', margin: '12px 0 0 0' }}>
+                <p style={{ fontSize: '12px', color: '#0c2340', fontWeight: '600', textAlign: 'center', margin: '12px 0 0 0' }}>
                   {rating === 0 ? 'Click to rate' : `You rated ${rating} star${rating !== 1 ? 's' : ''}`}
                 </p>
               </div>
@@ -200,7 +200,7 @@ export default function CustomerFeedback() {
                     transition: 'all 0.15s',
                     color: '#1a1a1a'
                   }}
-                  onFocus={e => (e.target.style.borderColor = '#0052cc', e.target.style.boxShadow = '0 0 0 3px rgba(0,82,204,0.1)')}
+                  onFocus={e => (e.target.style.borderColor = '#0c2340', e.target.style.boxShadow = '0 0 0 3px rgba(12,35,64,0.1)')}
                   onBlur={e => (e.target.style.borderColor = '#e0e0e0', e.target.style.boxShadow = 'none')}
                 />
                 <p style={{ fontSize: '11px', color: '#999', margin: '6px 0 0 0' }}>
