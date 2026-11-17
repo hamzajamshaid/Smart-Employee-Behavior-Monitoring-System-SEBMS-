@@ -1,5 +1,4 @@
 import CounterSession from './pages/CounterSession';
-import CounterWorkflow from './pages/CounterWorkflow';
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 
@@ -115,7 +114,6 @@ export default function App() {
           <Route path="/reports" element={<ProtectedRoute requiredRole="Admin"><Reports /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute requiredRole="Admin"><Settings /></ProtectedRoute>} />
           <Route path="/feedback" element={<ProtectedRoute requiredRole="Admin"><Feedback /></ProtectedRoute>} />
-          <Route path="/counter-workflow" element={<ProtectedRoute requiredRole="Admin"><CounterWorkflow /></ProtectedRoute>} />
 
           {/* EMPLOYEE ROUTES */}
           <Route path="/employee-dashboard" element={<ProtectedRoute requiredRole="Employee"><EmployeeDashboard /></ProtectedRoute>} />

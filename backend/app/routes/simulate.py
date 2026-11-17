@@ -122,7 +122,9 @@ def simulate_capture():
 
             # 3. END INTERACTION
             interaction.end_timestamp = datetime.utcnow()
+            from app.services.clip_length import get_clip_seconds
             interaction.video_file_path = video_path
+            interaction.video_duration_seconds = get_clip_seconds(video_path)
             session.commit()
             
             print(f"🔵 [SIMULATE] Returning success response", flush=True)

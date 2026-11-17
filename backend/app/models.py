@@ -127,6 +127,7 @@ class Interaction(Base):
     start_timestamp = Column(DateTime, nullable=False)
     end_timestamp = Column(DateTime, nullable=True)
     video_file_path = Column(String(255), nullable=True)
+    video_duration_seconds = Column(Float, nullable=True)  # real clip length, measured on save
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relationships

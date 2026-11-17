@@ -1,5 +1,10 @@
 import { useState } from 'react'
 
+const formatSeconds = (sec) => {
+  const s = Math.round(sec);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+};
+
 export default function InteractionModal({ interaction, onClose }) {
   const [showTranscript, setShowTranscript] = useState(!!interaction?.openTranscript)
   if (!interaction) return null
@@ -69,44 +74,41 @@ export default function InteractionModal({ interaction, onClose }) {
 
           <div>
             <p style={{ fontSize: '11px', color: '#aaa', textTransform: 'uppercase', marginBottom: '4px' }}>Time</p>
-            <p style={{ fontSize: '14px', color: '#555' }}>{interaction.start_time}</p>
+            <p style={{ fontSize: '14px', color: '#555' }}>{interaction.time || (interaction.start_timestamp ? new Date(interaction.start_timestamp).toLocaleString() : '—')}</p>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div>
               <p style={{ fontSize: '11px', color: '#aaa', textTransform: 'uppercase', marginBottom: '4px' }}>Presence</p>
-              <p style={{ fontSize: '14px', fontWeight: '600', color: interaction.present ? '#27AE60' : '#C0392B' }}>
-                {interaction.present ? '✓ Present' : '✗ Absent'}
+              <p style={{ fontSize: '14px', fontWeight: '600', color: Number(interaction.presence_score) >= 50 ? '#27AE60' : '#C0392B' }}>
+                {Number(interaction.presence_score) >= 50 ? 'Detected' : 'No'}
               </p>
             </div>
             <div>
               <p style={{ fontSize: '11px', color: '#aaa', textTransform: 'uppercase', marginBottom: '4px' }}>Emotion</p>
-              <p style={{ fontSize: '14px', color: '#555' }}>{interaction.emotion ? `${Math.round(interaction.emotion)}%` : '—'}</p>
+              <p style={{ fontSize: '14px', fontWeight: '600', color: interaction.emotion > 0 ? '#27AE60' : '#C0392B' }}>{interaction.emotion > 0 ? 'Detected' : 'No'}</p>
             </div>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div>
               <p style={{ fontSize: '11px', color: '#aaa', textTransform: 'uppercase', marginBottom: '4px' }}>Voice</p>
-              <p style={{ fontSize: '14px', color: '#555' }}>{interaction.voice ? `${Math.round(interaction.voice)}%` : '—'}</p>
-              <button type="button" onClick={() => setShowTranscript(s => !s)} style={{ marginTop: '6px', background: 'none', border: '1px solid #2E4057', color: '#2E4057', borderRadius: '6px', padding: '4px 10px', fontSize: '12px', cursor: 'pointer' }}>
-                {showTranscript ? 'Hide transcript' : 'View transcript'}
-              </button>
+              <p style={{ fontSize: '14px', fontWeight: '600', color: interaction.voice > 0 ? '#27AE60' : '#C0392B' }}>{interaction.voice > 0 ? 'Detected' : 'No'}</p>
             </div>
             <div>
               <p style={{ fontSize: '11px', color: '#aaa', textTransform: 'uppercase', marginBottom: '4px' }}>Response Time</p>
               <p style={{ fontSize: '14px', color: '#555' }}>{interaction.response ? `${interaction.response}s` : '—'}</p>
             </div>
           </div>
+          <div>
+            <p style={{ fontSize: '11px', color: '#aaa', textTransform: 'uppercase', marginBottom: '4px' }}>Feedback</p>
+            <p style={{ fontSize: '14px', fontWeight: '600', color: interaction.feedback ? '#27AE60' : '#C0392B' }}>{interaction.feedback ? `${interaction.feedback}★` : 'Missing: no QR rating submitted'}</p>
+          </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div>
-              <p style={{ fontSize: '11px', color: '#aaa', textTransform: 'uppercase', marginBottom: '4px' }}>Customer Rating</p>
-              <p style={{ fontSize: '14px', color: '#555' }}>{interaction.feedback ? `${interaction.feedback}★` : '—'}</p>
-            </div>
-            <div>
               <p style={{ fontSize: '11px', color: '#aaa', textTransform: 'uppercase', marginBottom: '4px' }}>Duration</p>
-              <p style={{ fontSize: '14px', color: '#555' }}>{interaction.end_time ? '5 min' : '—'}</p>
+              <p style={{ fontSize: '14px', color: '#555' }}>{interaction.video_duration_seconds != null ? formatSeconds(interaction.video_duration_seconds) : '—'}</p>
             </div>
           </div>
         </div>
