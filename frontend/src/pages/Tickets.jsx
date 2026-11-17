@@ -21,6 +21,24 @@ const DATE_OPTIONS = [
 const STATUS_OPTIONS = ['All', 'Open', 'In Progress', 'Resolved']
 const PRIORITY_OPTIONS = ['All', 'Low', 'Medium', 'High', 'Urgent']
 
+function AnalyzingNote({ job, fetchedAt }) {
+  const [now, setNow] = useState(Date.now())
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(t)
+  }, [])
+  const left = Math.max(0, job.eta_seconds - (now - fetchedAt) / 1000)
+  const mins = Math.floor(left / 60)
+  const secs = String(Math.floor(left % 60)).padStart(2, '0')
+  return (
+    <div style={{ fontSize: '12px', color: '#3b82f6', fontWeight: '600', marginTop: '6px' }}>
+      Analyzing {job.done} of {job.total} messages · {left > 0 ? `about ${mins}:${secs} left` : 'finishing…'}
+    </div>
+  )
+}
+
+const qualityBand = (score) => (score >= 70 ? 'Good' : score >= 40 ? 'Fair' : 'Bad')
+
 const getStatusColor = (status) => ({ 'Open': '#f59e0b', 'In Progress': '#3b82f6', 'Resolved': '#10b981' }[status] || '#6b7280')
 const getPriorityColor = (priority) => ({ 'Low': '#10b981', 'Medium': '#eab308', 'High': '#f59e0b', 'Urgent': '#ef4444' }[priority] || '#6b7280')
 
@@ -63,6 +81,20 @@ export default function Tickets() {
   const [updating, setUpdating] = useState({})
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('All')
+  const [analysis, setAnalysis] = useState({ scores: {}, jobs: {}, fetchedAt: 0 })
+
+  useEffect(() => {
+    const token = sessionStorage.getItem('token')
+    if (!token) return
+    const load = () => {
+      axios.get(`${API_BASE}/api/tickets/analysis`, { headers: { Authorization: `Bearer ${token}` } })
+        .then(res => setAnalysis({ ...(res.data || {}), fetchedAt: Date.now() }))
+        .catch(() => {})
+    }
+    load()
+    const timer = setInterval(load, 3000)
+    return () => clearInterval(timer)
+  }, [])
   const [priorityFilter, setPriorityFilter] = useState('All')
   const [typeFilter, setTypeFilter] = useState('All')
   const [employeeFilter, setEmployeeFilter] = useState('all')
@@ -160,6 +192,8 @@ export default function Tickets() {
   })
 
   const renderCard = (t) => {
+    const an = (analysis.scores || {})[t.id] || {}
+    const job = (analysis.jobs || {})[t.id]
     const sColor = getStatusColor(t.status)
     const pColor = getPriorityColor(t.priority)
     return (
@@ -172,6 +206,9 @@ export default function Tickets() {
             <Field label="Employee" value={t.employee_name || 'Unassigned'} />
             <Field label="Type" value={t.type || '—'} />
             <Field label="Created" value={fmt(t.created_at)} />
+            <Field label="Quality" value={job && job.status === 'running' ? 'Analyzing…' : job && job.status === 'failed' ? 'Failed' : (an.quality_score != null ? `${an.quality_score} · ${qualityBand(an.quality_score)}` : (an.chat_score != null ? 'Pending rating' : '—'))} />
+            <Field label="Flags" value={an.flagged_count != null ? an.flagged_count : '—'} />
+            {job && job.status === 'running' && <AnalyzingNote job={job} fetchedAt={analysis.fetchedAt} />}
           </div>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', flexShrink: 0 }}>
             <span style={{ background: pColor + '20', color: pColor, padding: '4px 10px', borderRadius: '4px', fontSize: '11px', fontWeight: '700' }}>{t.priority}</span>
@@ -202,11 +239,6 @@ export default function Tickets() {
         <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
           {STATUS_OPTIONS.map(s => (
             <button key={s} onClick={() => setStatusFilter(s)} style={btnStyle(statusFilter === s)}>{s}</button>
-          ))}
-        </div>
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
-          {PRIORITY_OPTIONS.map(p => (
-            <button key={p} onClick={() => setPriorityFilter(p)} style={btnStyle(priorityFilter === p, '#7c3aed')}>{p}</button>
           ))}
         </div>
 

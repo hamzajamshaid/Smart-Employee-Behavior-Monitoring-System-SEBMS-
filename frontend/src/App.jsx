@@ -26,6 +26,7 @@ import EmployeeDashboard from './pages/EmployeeDashboard'
 import EmployeeTickets from './pages/EmployeeTickets'
 import EmployeeAppointments from './pages/EmployeeAppointments'
 import EmployeeTicketDetail from './pages/EmployeeTicketDetail'
+import AdminTicketDetail from './pages/AdminTicketDetail'
 
 // Customer Pages
 import CustomerDashboard from './pages/CustomerDashboard'
@@ -117,6 +118,7 @@ export default function App() {
           {/* EMPLOYEE ROUTES */}
           <Route path="/employee-dashboard" element={<ProtectedRoute requiredRole="Employee"><EmployeeDashboard /></ProtectedRoute>} />
           <Route path="/employee-tickets" element={<ProtectedRoute requiredRole="Employee"><EmployeeTickets /></ProtectedRoute>} />
+          <Route path="/tickets/:id" element={<ProtectedRoute requiredRole="Admin"><AdminTicketDetail /></ProtectedRoute>} />
           <Route path="/employee-tickets/:id" element={<ProtectedRoute requiredRole="Employee"><EmployeeTicketDetail /></ProtectedRoute>} />
           <Route path="/employee-appointments" element={<ProtectedRoute requiredRole="Employee"><EmployeeAppointments /></ProtectedRoute>} />
           <Route path="/counter" element={<ProtectedRoute requiredRole="Employee"><CounterSession /></ProtectedRoute>} />

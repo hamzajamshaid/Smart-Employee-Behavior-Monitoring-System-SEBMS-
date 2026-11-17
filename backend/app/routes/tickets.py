@@ -25,6 +25,55 @@ def _ticket_visible(t):
     return False
 
 
+@tickets_bp.route('/tickets/analysis', methods=['GET'])
+@jwt_required()
+def get_ticket_analysis_list():
+    if get_jwt().get('role') != 'Admin':
+        return jsonify({'error': 'Only admins can view analysis'}), 403
+    session = current_app.SessionLocal()
+    try:
+        from app.services.ticket_analysis import ensure_tables, load_analysis
+        ensure_tables(session)
+        return jsonify(load_analysis(session)), 200
+    except Exception as e:
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
+    finally:
+        session.close()
+
+@tickets_bp.route('/tickets/<int:ticket_id>/analysis', methods=['GET'])
+@jwt_required()
+def get_single_ticket_analysis(ticket_id):
+    if get_jwt().get('role') != 'Admin':
+        return jsonify({'error': 'Only admins can view analysis'}), 403
+    session = current_app.SessionLocal()
+    try:
+        import json as _json
+        from sqlalchemy import text
+        from app.services.ticket_analysis import ensure_tables
+        ensure_tables(session)
+        job = session.execute(text(
+            "SELECT status, total, done, error FROM ticket_analysis_job WHERE ticket_id = :tid"
+        ), {'tid': ticket_id}).mappings().first()
+        job_data = dict(job) if job else None
+        row = session.execute(text(
+            "SELECT chat_score, flagged_count, flagged_messages, quality_score, analyzed_at FROM ticket_analysis WHERE ticket_id = :tid"
+        ), {'tid': ticket_id}).mappings().first()
+        if row is None:
+            return jsonify({'analyzed': False, 'job': job_data}), 200
+        return jsonify({
+            'analyzed': True,
+            'chat_score': float(row['chat_score']) if row['chat_score'] is not None else None,
+            'flagged_count': row['flagged_count'],
+            'quality_score': float(row['quality_score']) if row['quality_score'] is not None else None,
+            'analyzed_at': row['analyzed_at'].isoformat() if row['analyzed_at'] else None,
+            'flagged_messages': _json.loads(row['flagged_messages'] or '[]'),
+            'job': job_data
+        }), 200
+    except Exception as e:
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
+    finally:
+        session.close()
+
 @tickets_bp.route('/tickets/analytics', methods=['GET'])
 @jwt_required()
 def get_ticket_analytics():
@@ -133,6 +182,9 @@ def get_ticket_detail(ticket_id):
                 return jsonify({'error': 'Ticket not found'}), 404
             if not _ticket_visible(ticket):
                 return jsonify({'error': 'Ticket not found'}), 404
+            if get_jwt().get('role') == 'Customer' and ticket.employee_id is None:
+                from app.services.ticket_assign import auto_assign_employee
+                auto_assign_employee(session, ticket)
             
             return jsonify({
                 'id': ticket.id,
@@ -274,6 +326,8 @@ def customer_resolve_ticket(ticket_id):
             ticket.status = 'Resolved'
             ticket.updated_at = datetime.utcnow()
             session.commit()
+            from app.services.ticket_analysis import start_analysis
+            start_analysis(current_app._get_current_object(), ticket.id)
             return jsonify({'id': ticket.id, 'status': ticket.status, 'message': 'Ticket marked as resolved'}), 200
         finally:
             session.close()
@@ -301,6 +355,8 @@ def customer_rate_ticket(ticket_id):
             ticket.customer_rating = stars
             ticket.updated_at = datetime.utcnow()
             session.commit()
+            from app.services.ticket_analysis import refresh_quality
+            refresh_quality(current_app.SessionLocal(), ticket.id, stars)
             return jsonify({'id': ticket.id, 'customer_rating': stars, 'message': 'Thank you for rating'}), 200
         finally:
             session.close()
