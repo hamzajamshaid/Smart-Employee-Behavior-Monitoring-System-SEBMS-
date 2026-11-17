@@ -33,9 +33,17 @@ export default function Reports() {
     if (!token) { navigate('/login'); return; }
     axios.get(`${API_BASE}/api/employees`, { headers }).then(res => {
       setEmployees(res.data);
-      res.data.forEach(e => axios.get(`${API_BASE}/api/employees/${e.id}`, { headers }).then(r => setDetails(prev => ({ ...prev, [e.id]: r.data }))));
     });
   }, []);
+
+  useEffect(() => {
+    if (!token) return;
+    axios.get(`${API_BASE}/api/reports/stats?${buildParams()}`, { headers }).then(res => {
+      const map = {};
+      res.data.forEach(row => { map[row.employee_id] = row; });
+      setDetails(map);
+    }).catch(err => console.error('Stats error:', err));
+  }, [period, dateFrom, dateTo]);
 
   useEffect(() => {
     const params = buildParams();
@@ -98,8 +106,9 @@ export default function Reports() {
           {employees.map(e => {
             const d = details[e.id];
             const scoreColor = d?.unified_score >= 80 ? '#10b981' : d?.unified_score >= 65 ? '#f59e0b' : '#ef4444';
+            const boxColor = e.status === 'Active' ? '#10b981' : '#9ca3af';
             return (
-              <div key={e.id} style={{ ...cardStyle, borderTop: `4px solid ${scoreColor}` }} onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-2px)', e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,82,204,0.15)')} onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)', e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)')}>
+              <div key={e.id} style={{ ...cardStyle, borderTop: `4px solid ${boxColor}` }} onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-2px)', e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,82,204,0.15)')} onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)', e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)')}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1 }}>
                     <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'linear-gradient(135deg, #0052cc 0%, #003d99 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '18px', fontWeight: '700' }}>
@@ -123,7 +132,7 @@ export default function Reports() {
                         </div>
                       ))}
                     </div>
-                    <button onClick={() => generateReport(e.id, e.name)} disabled={generatingReport !== null} style={{ width: '100%', padding: '10px 16px', background: scoreColor, color: '#fff', border: 'none', borderRadius: '6px', cursor: generatingReport === null ? 'pointer' : 'not-allowed', fontSize: '13px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', opacity: generatingReport !== null ? 0.7 : 1 }} onMouseEnter={e => generatingReport === null && (e.currentTarget.style.transform = 'translateY(-2px)', e.currentTarget.style.boxShadow = `0 4px 12px ${scoreColor}40`)} onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)', e.currentTarget.style.boxShadow = 'none')}>
+                    <button onClick={() => generateReport(e.id, e.name)} disabled={generatingReport !== null} style={{ width: '100%', padding: '10px 16px', background: boxColor, color: '#fff', border: 'none', borderRadius: '6px', cursor: generatingReport === null ? 'pointer' : 'not-allowed', fontSize: '13px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', opacity: generatingReport !== null ? 0.7 : 1 }} onMouseEnter={e => generatingReport === null && (e.currentTarget.style.transform = 'translateY(-2px)', e.currentTarget.style.boxShadow = `0 4px 12px ${boxColor}40`)} onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)', e.currentTarget.style.boxShadow = 'none')}>
                       <Download size={14} />
                       {generatingReport === e.id ? 'Generating...' : 'Generate Report'}
                     </button>

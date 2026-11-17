@@ -5,7 +5,7 @@ from flask_jwt_extended import jwt_required, get_jwt
 from sqlalchemy import or_
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
-from app.models import Employee, BehavioralScore, CustomerFeedback
+from app.models import Employee, BehavioralScore, CustomerFeedback, Interaction, ResponseTimeRecord
 
 reports_bp = Blueprint('reports', __name__)
 
@@ -137,3 +137,55 @@ def all_report():
     if get_jwt().get('role') != 'Admin':
         return jsonify({'error': 'Admin role required'}), 403
     return _build_report(request.args, None)
+
+
+@reports_bp.route('/reports/stats', methods=['GET'])
+@jwt_required()
+def report_stats():
+    if get_jwt().get('role') != 'Admin':
+        return jsonify({'error': 'Admin role required'}), 403
+    start, end = _range(request.args)
+    lo = datetime.combine(start, time.min) if start else None
+    hi = datetime.combine(end, time.max)
+    session = current_app.SessionLocal()
+    try:
+        employees = session.query(Employee).filter(Employee.status != 'Deleted').all()
+        iq = session.query(Interaction).filter(Interaction.start_timestamp <= hi)
+        if lo:
+            iq = iq.filter(Interaction.start_timestamp >= lo)
+        interactions = iq.all()
+        by_emp = {}
+        for it in interactions:
+            by_emp.setdefault(it.employee_id, []).append(it)
+        inter_ids = [it.id for it in interactions]
+        rt, fb = {}, {}
+        if inter_ids:
+            rt = {r.interaction_id: r.response_seconds for r in
+                  session.query(ResponseTimeRecord).filter(ResponseTimeRecord.interaction_id.in_(inter_ids)).all()}
+            fb = {f.interaction_id: f.star_rating for f in
+                  session.query(CustomerFeedback).filter(CustomerFeedback.interaction_id.in_(inter_ids)).all()}
+        sq = session.query(BehavioralScore).filter(
+            or_(BehavioralScore.score_status == 'scored', BehavioralScore.score_status.is_(None)),
+            BehavioralScore.date <= hi)
+        if lo:
+            sq = sq.filter(BehavioralScore.date >= lo)
+        scores_by_emp = {}
+        for s_row in sq.all():
+            scores_by_emp.setdefault(s_row.employee_id, []).append(s_row)
+        out = []
+        for e in employees:
+            its = by_emp.get(e.id, [])
+            scs = scores_by_emp.get(e.id, [])
+            out.append({
+                'employee_id': e.id,
+                'total_interactions': len(its),
+                'presence_rate': _avg([s_row.presence_score for s_row in scs]),
+                'avg_response': _avg([rt.get(i.id) for i in its]),
+                'feedback': _avg([fb.get(i.id) for i in its]),
+                'unified_score': _avg([s_row.unified_score for s_row in scs]),
+            })
+        return jsonify(out), 200
+    except Exception as e:
+        return jsonify({'error': 'stats failed', 'detail': str(e)}), 500
+    finally:
+        session.close()

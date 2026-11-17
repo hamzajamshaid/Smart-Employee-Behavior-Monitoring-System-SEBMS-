@@ -8,10 +8,10 @@ import QRModal from '../components/QRModal'
 import InteractionModal from '../components/InteractionModal'
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
-const COLORS = { 'Ahmed Raza': '#0052cc', 'Sara Khan': '#00a86b', 'Bilal Ahmed': '#ff6b35' }
+const COLORS = { 'Ahmed Raza': '#0c2340', 'Sara Khan': '#00a86b', 'Bilal Ahmed': '#ff6b35' }
 const PERIODS = [{ label: 'Today', value: 'today' }, { label: 'This Week', value: 'week' }, { label: 'This Month', value: 'month' }, { label: 'All time', value: 'all' }, { label: 'Custom', value: 'custom' }]
 
-const btnStyle = (active) => ({ padding: '8px 16px', borderRadius: '6px', border: '1px solid #0052cc', background: active ? '#0052cc' : '#fff', color: active ? '#fff' : '#0052cc', cursor: 'pointer', fontSize: '13px', fontWeight: active ? '600' : '500', transition: 'all 0.15s linear' })
+const btnStyle = (active) => ({ padding: '8px 16px', borderRadius: '6px', border: '1px solid #0c2340', background: active ? '#0c2340' : '#fff', color: active ? '#fff' : '#0c2340', cursor: 'pointer', fontSize: '13px', fontWeight: active ? '600' : '500', transition: 'all 0.15s linear' })
 
 const cardStyle = { background: '#fff', borderRadius: '10px', padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', border: '1px solid #e8e8e8', transition: 'all 0.2s linear' }
 
@@ -23,7 +23,7 @@ const STATUS_STYLE = {
   detector_miss: ['#7c3aed', 'Detector miss'],
   failed: ['#e53935', 'Failed'],
   not_processed: ['#999', 'Not processed'],
-  in_progress: ['#0052cc', 'In progress'],
+  in_progress: ['#0c2340', 'In progress'],
   legacy: ['#999', 'Legacy'],
 };
 const statusBadge = s => {
@@ -109,7 +109,7 @@ export default function Dashboard() {
       return <button disabled style={{ ...base, background: '#8fa8d8', cursor: 'not-allowed' }}>{left > 0 ? `Processing… ${left}s` : 'Finishing…'}</button>
     }
     if (row.processing_status === 'scored') return <button onClick={() => startProcess(id)} disabled={busy} style={{ ...base, background: '#16a34a', cursor: busy ? 'not-allowed' : 'pointer' }}>✓ Processed</button>
-    return <button onClick={() => startProcess(id)} disabled={busy} style={{ ...base, background: '#0052cc', cursor: busy ? 'not-allowed' : 'pointer' }}>Process this session</button>
+    return <button onClick={() => startProcess(id)} disabled={busy} style={{ ...base, background: '#0c2340', cursor: busy ? 'not-allowed' : 'pointer' }}>Process this session</button>
   }
 
   useEffect(() => {
@@ -252,14 +252,14 @@ export default function Dashboard() {
       <style>{`
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .card-hover { transition: all 0.2s linear; }
-        .card-hover:hover { box-shadow: 0 8px 24px rgba(0,82,204,0.15); transform: translateY(-2px); }
+        .card-hover:hover { box-shadow: 0 8px 24px rgba(12,35,64,0.15); transform: translateY(-2px); }
       `}</style>
 
       {/* Sticky Header */}
-      <div style={{ position: 'sticky', top: 0, background: '#e8f0ff', borderBottom: '2px solid #0052cc', padding: '16px 30px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', zIndex: 50 }}>
+      <div style={{ position: 'sticky', top: 0, background: '#e8f1f5', borderBottom: '2px solid #0c2340', padding: '16px 30px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', zIndex: 50 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '30px', marginBottom: '12px' }}>
           <div style={{ flex: 1 }}>
-            <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#0052cc', margin: 0, lineHeight: '1.1' }}>Performance Dashboard</h1>
+            <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#0c2340', margin: 0, lineHeight: '1.1' }}>Performance Dashboard</h1>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
             <div style={{ position: 'relative', width: '300px' }}>
@@ -270,18 +270,18 @@ export default function Dashboard() {
                 onChange={e => setSearchQuery(e.target.value)} 
                 onFocus={() => setShowDropdown(true)} 
                 onBlur={() => setTimeout(() => setShowDropdown(false), 200)} 
-                style={{ width: '100%', padding: '10px 12px 10px 36px', border: '1px solid #0052cc', borderRadius: '6px', fontSize: '13px', boxShadow: '0 1px 3px rgba(0,82,204,0.1)', transition: 'all 0.15s linear', color: '#1a1a1a', background: '#fff' }} 
-                onMouseEnter={e => e.target.style.borderColor = '#003d99'} 
-                onMouseLeave={e => e.target.style.borderColor = '#0052cc'} 
+                style={{ width: '100%', padding: '10px 12px 10px 36px', border: '1px solid #0c2340', borderRadius: '6px', fontSize: '13px', boxShadow: '0 1px 3px rgba(12,35,64,0.1)', transition: 'all 0.15s linear', color: '#1a1a1a', background: '#fff' }} 
+                onMouseEnter={e => e.target.style.borderColor = '#13315c'} 
+                onMouseLeave={e => e.target.style.borderColor = '#0c2340'} 
               />
-              <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#0052cc', fontSize: '14px' }}>🔍</span>
+              <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#0c2340', fontSize: '14px' }}>🔍</span>
               {showDropdown && filteredEmployees.length > 0 && (
-                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#fff', border: '1px solid #0052cc', borderTop: 'none', borderRadius: '0 0 6px 6px', maxHeight: '200px', overflowY: 'auto', zIndex: 10, boxShadow: '0 4px 12px rgba(0,82,204,0.15)', marginTop: '2px' }}>
+                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#fff', border: '1px solid #0c2340', borderTop: 'none', borderRadius: '0 0 6px 6px', maxHeight: '200px', overflowY: 'auto', zIndex: 10, boxShadow: '0 4px 12px rgba(12,35,64,0.15)', marginTop: '2px' }}>
                   <div 
-                    style={{ padding: '8px 12px', cursor: 'pointer', fontSize: '13px', color: '#333', background: !selectedEmp ? '#e8f0ff' : 'transparent', transition: 'background 0.15s linear', fontWeight: !selectedEmp ? '600' : '500' }} 
+                    style={{ padding: '8px 12px', cursor: 'pointer', fontSize: '13px', color: '#333', background: !selectedEmp ? '#e8f1f5' : 'transparent', transition: 'background 0.15s linear', fontWeight: !selectedEmp ? '600' : '500' }} 
                     onClick={() => { setSelectedEmp(null); setSearchQuery(''); setShowDropdown(false) }}
-                    onMouseEnter={e => e.currentTarget.style.background = '#e8f0ff'} 
-                    onMouseLeave={e => e.currentTarget.style.background = !selectedEmp ? '#e8f0ff' : 'transparent'}
+                    onMouseEnter={e => e.currentTarget.style.background = '#e8f1f5'} 
+                    onMouseLeave={e => e.currentTarget.style.background = !selectedEmp ? '#e8f1f5' : 'transparent'}
                   >
                     All Employees
                   </div>
@@ -289,9 +289,9 @@ export default function Dashboard() {
                     <div 
                       key={e.id} 
                       onClick={() => { setSelectedEmp(e.id); setSearchQuery(''); setShowDropdown(false) }} 
-                      style={{ padding: '8px 12px', cursor: 'pointer', fontSize: '13px', color: '#333', background: selectedEmp === e.id ? '#e8f0ff' : 'transparent', borderLeft: selectedEmp === e.id ? '3px solid #0052cc' : '3px solid transparent', transition: 'background 0.15s linear', fontWeight: selectedEmp === e.id ? '600' : '500' }} 
-                      onMouseEnter={e => e.currentTarget.style.background = '#e8f0ff'} 
-                      onMouseLeave={e => e.currentTarget.style.background = selectedEmp === e.id ? '#e8f0ff' : 'transparent'}
+                      style={{ padding: '8px 12px', cursor: 'pointer', fontSize: '13px', color: '#333', background: selectedEmp === e.id ? '#e8f1f5' : 'transparent', borderLeft: selectedEmp === e.id ? '3px solid #0c2340' : '3px solid transparent', transition: 'background 0.15s linear', fontWeight: selectedEmp === e.id ? '600' : '500' }} 
+                      onMouseEnter={e => e.currentTarget.style.background = '#e8f1f5'} 
+                      onMouseLeave={e => e.currentTarget.style.background = selectedEmp === e.id ? '#e8f1f5' : 'transparent'}
                     >
                       {e.name}
                     </div>
@@ -300,7 +300,7 @@ export default function Dashboard() {
               )}
             </div>
             <div style={{ fontSize: '12px', color: '#333', fontWeight: '600' }}>
-              Viewing: <span style={{ color: '#0052cc', fontWeight: '700' }}>{selectedEmpName}</span> • <span style={{ color: '#0052cc', fontWeight: '700' }}>{periodLabel}</span>
+              Viewing: <span style={{ color: '#0c2340', fontWeight: '700' }}>{selectedEmpName}</span> • <span style={{ color: '#0c2340', fontWeight: '700' }}>{periodLabel}</span>
             </div>
           </div>
         </div>
@@ -308,12 +308,12 @@ export default function Dashboard() {
           <span style={{ fontSize: '13px', color: '#333', fontWeight: '700' }}>Period:</span>
           {PERIODS.map(p => (<button key={p.value} onClick={() => setPeriod(p.value)} style={btnStyle(period === p.value)}>{p.label}</button>))}
           <button onClick={() => runBatch([])} style={btnStyle(false)}>▶ Run batch</button>
-          {batchMsg && <span style={{ fontSize: '12px', color: '#0052cc', fontWeight: 600 }}>{batchMsg}</span>}
+          {batchMsg && <span style={{ fontSize: '12px', color: '#0c2340', fontWeight: 600 }}>{batchMsg}</span>}
           {period === 'custom' && (
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginLeft: '8px' }}>
-              <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} style={{ padding: '6px 10px', border: '1px solid #0052cc', borderRadius: '5px', fontSize: '12px', color: '#1a1a1a', background: '#fff' }} />
+              <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} style={{ padding: '6px 10px', border: '1px solid #0c2340', borderRadius: '5px', fontSize: '12px', color: '#1a1a1a', background: '#fff' }} />
               <span style={{ color: '#333', fontSize: '12px', fontWeight: '600' }}>to</span>
-              <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} style={{ padding: '6px 10px', border: '1px solid #0052cc', borderRadius: '5px', fontSize: '12px', color: '#1a1a1a', background: '#fff' }} />
+              <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} style={{ padding: '6px 10px', border: '1px solid #0c2340', borderRadius: '5px', fontSize: '12px', color: '#1a1a1a', background: '#fff' }} />
             </div>
           )}
         </div>
@@ -332,7 +332,7 @@ export default function Dashboard() {
         {summary ? (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '12px' }}>
             <div className="card-hover" style={{ animation: 'fadeIn 0.3s ease-out' }}>
-              <KPICard label="Unified Score" value={`${fmtNum(summary.unified_score)}`} sub="out of 100" color="#0052cc" />
+              <KPICard label="Unified Score" value={`${fmtNum(summary.unified_score)}`} sub="out of 100" color="#0c2340" />
             </div>
             <div className="card-hover" style={{ animation: 'fadeIn 0.3s ease-out 0.05s both' }}>
               <KPICard label="Avg presence score" value={`${fmtNum(summary.presence_rate)}`} sub="average of measured presence scores" color="#00a86b" />
@@ -353,28 +353,28 @@ export default function Dashboard() {
         {/* Top Performers */}
         {topPerformers.length === 0 ? (
           <div className="card-hover" style={cardStyle}>
-            <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#0052cc', marginBottom: '14px', marginTop: 0 }}>🏆 Top Performers</h3>
+            <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#0c2340', marginBottom: '14px', marginTop: 0 }}>🏆 Top Performers</h3>
             <p style={{ fontSize: '13px', color: '#666', margin: 0 }}>
               Not enough measured data to rank. A ranking needs at least 2 employees with measured interactions.
             </p>
           </div>
         ) : (
           <div className="card-hover" style={{ ...cardStyle, marginBottom: '12px' }}>
-            <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#0052cc', marginBottom: '14px', marginTop: 0 }}>🏆 Top Performers</h3>
+            <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#0c2340', marginBottom: '14px', marginTop: 0 }}>🏆 Top Performers</h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>
               {topPerformers.map((emp, idx) => (
                 <div 
                   key={emp.id} 
                   className="card-hover" 
-                  style={{ background: 'linear-gradient(135deg, #e8f0ff 0%, #fff 100%)', border: '1px solid #d0e0ff', borderRadius: '8px', padding: '16px', textAlign: 'center', position: 'relative', cursor: 'pointer', transition: 'all 0.2s linear' }} 
-                  onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,82,204,0.15)' }} 
+                  style={{ background: 'linear-gradient(135deg, #e8f1f5 0%, #fff 100%)', border: '1px solid #d0e0ff', borderRadius: '8px', padding: '16px', textAlign: 'center', position: 'relative', cursor: 'pointer', transition: 'all 0.2s linear' }} 
+                  onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 16px rgba(12,35,64,0.15)' }} 
                   onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none' }}
                 >
                   <div style={{ position: 'absolute', top: '-8px', right: '10px', background: idx === 0 ? '#ffd700' : idx === 1 ? '#c0c0c0' : '#cd7f32', color: idx === 1 ? '#666' : '#fff', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '14px', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
                     {idx + 1}
                   </div>
                   <p style={{ fontSize: '14px', fontWeight: '700', color: '#1a1a1a', margin: '8px 0 10px' }}>{emp.name}</p>
-                  <p style={{ fontSize: '26px', fontWeight: '800', color: '#0052cc', margin: '0 0 4px' }}>{emp.score}</p>
+                  <p style={{ fontSize: '26px', fontWeight: '800', color: '#0c2340', margin: '0 0 4px' }}>{emp.score}</p>
                   <p style={{ fontSize: '11px', color: '#666', margin: '0', fontWeight: '600' }}>Score</p>
                 </div>
               ))}
@@ -386,13 +386,13 @@ export default function Dashboard() {
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '12px', marginTop: '20px', marginBottom: '12px' }}>
           {/* Score Trend */}
           <div className="card-hover" style={cardStyle}>
-            <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#0052cc', marginBottom: '14px', marginTop: 0 }}>📈 Score Trend</h3>
+            <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#0c2340', marginBottom: '14px', marginTop: 0 }}>📈 Score Trend</h3>
             {trendData.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={trendData} margin={{ top: 5, right: 10, left: -15, bottom: 0 }}>
                   <XAxis dataKey="date" hide />
                   <YAxis domain={[50, 100]} fontSize={11} stroke="#ddd" />
-                  <Tooltip contentStyle={{ background: '#fff', border: '2px solid #0052cc', borderRadius: '6px', boxShadow: '0 2px 8px rgba(0,82,204,0.15)', padding: '8px 12px', fontSize: '12px' }} />
+                  <Tooltip contentStyle={{ background: '#fff', border: '2px solid #0c2340', borderRadius: '6px', boxShadow: '0 2px 8px rgba(12,35,64,0.15)', padding: '8px 12px', fontSize: '12px' }} />
                   <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '12px', color: '#333' }} />
                   {Object.keys(COLORS).map(name => trendData[0]?.[name] !== undefined ? <Line key={name} type="linear" dataKey={name} stroke={COLORS[name]} strokeWidth={2.5} dot={false} /> : null)}
                 </LineChart>
@@ -404,15 +404,15 @@ export default function Dashboard() {
 
           {/* Recent Interactions */}
           <div className="card-hover" style={cardStyle}>
-            <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#0052cc', marginBottom: '6px', marginTop: 0 }}>📋 Recent Interactions</h3>
+            <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#0c2340', marginBottom: '6px', marginTop: 0 }}>📋 Recent Interactions</h3>
             <p style={{ fontSize: '12px', color: '#666', marginBottom: '12px' }}>Last {interactions.length} interactions</p>
-            <input type="text" value={idQuery} onChange={e => setIdQuery(e.target.value)} placeholder="Search session ID (e.g. 1297)" style={{ width: '100%', padding: '8px 10px', border: '1px solid #0052cc', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box', marginBottom: '8px' }} />
+            <input type="text" value={idQuery} onChange={e => setIdQuery(e.target.value)} placeholder="Search session ID (e.g. 1297)" style={{ width: '100%', padding: '8px 10px', border: '1px solid #0c2340', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box', marginBottom: '8px' }} />
             <div style={{ maxHeight: '345px', overflowY: 'auto', border: '1px solid #e8e8e8', borderRadius: '6px' }}>
               <table style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse' }}>
-                <thead style={{ position: 'sticky', top: 0, background: '#e8f0ff', zIndex: 10 }}>
-                  <tr style={{ borderBottom: '2px solid #0052cc' }}>
+                <thead style={{ position: 'sticky', top: 0, background: '#e8f1f5', zIndex: 10 }}>
+                  <tr style={{ borderBottom: '2px solid #0c2340' }}>
                     {['Session', 'Employee', "What's missing"].map(h => (
-                      <th key={h} style={{ textAlign: h === 'Employee' ? 'left' : 'center', padding: '10px 8px', color: '#0052cc', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                      <th key={h} style={{ textAlign: h === 'Employee' ? 'left' : 'center', padding: '10px 8px', color: '#0c2340', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
                         {h}
                       </th>
                     ))}
@@ -423,11 +423,11 @@ export default function Dashboard() {
                     interactions.filter(i => !idQuery.trim() || String(i.id).includes(idQuery.trim())).map((i, idx) => (
                       <tr 
                         key={i.id} 
-                        style={{ borderBottom: '1px solid #e8f0ff', cursor: 'pointer', transition: 'background 0.15s linear', background: idx % 2 === 0 ? '#fafbfc' : '#fff' }} 
-                        onMouseEnter={e => e.currentTarget.style.background = '#e8f0ff'} 
+                        style={{ borderBottom: '1px solid #e8f1f5', cursor: 'pointer', transition: 'background 0.15s linear', background: idx % 2 === 0 ? '#fafbfc' : '#fff' }} 
+                        onMouseEnter={e => e.currentTarget.style.background = '#e8f1f5'} 
                         onMouseLeave={e => e.currentTarget.style.background = idx % 2 === 0 ? '#fafbfc' : '#fff'}
                       >
-                        <td onClick={() => setSelectedInteraction(i)} style={{ padding: '10px 8px', textAlign: 'center', color: '#0052cc', fontWeight: '700', fontSize: '11px', cursor: 'pointer' }}>#{i.id}</td>
+                        <td onClick={() => setSelectedInteraction(i)} style={{ padding: '10px 8px', textAlign: 'center', color: '#0c2340', fontWeight: '700', fontSize: '11px', cursor: 'pointer' }}>#{i.id}</td>
                         <td onClick={() => setSelectedInteraction(i)} style={{ padding: '10px 8px', color: '#1a1a1a', fontWeight: '600', cursor: 'pointer' }}>{i.employee_name || 'N/A'}</td>
                         <td style={{ padding: '10px 8px', textAlign: 'center' }}>
                           {i.alert ? (<><span style={{ background: '#dc2626', color: '#fff', borderRadius: '4px', padding: '2px 8px', fontSize: '11px', fontWeight: '700' }}>Alert</span>{' '}<button onClick={(e) => { e.stopPropagation(); setNotesFor(i) }} style={{ background: '#fff', color: '#dc2626', border: '1px solid #dc2626', borderRadius: '4px', padding: '2px 8px', fontSize: '11px', cursor: 'pointer' }}>View</button></>) : i.processing_status === 'scored' ? <span style={{ background: '#dcfce7', color: '#15803d', borderRadius: '4px', padding: '2px 8px', fontSize: '11px', fontWeight: '700' }}>✓ All captured</span> : <span style={{ color: '#999', fontSize: '11px' }}>—</span>}
@@ -450,7 +450,7 @@ export default function Dashboard() {
                       {(notesFor.notes || []).map((n, k) => <li key={k}>{n}</li>)}
                     </ul>
                     <div style={{ textAlign: 'right', marginTop: '16px' }}>
-                      <button onClick={() => setNotesFor(null)} style={{ padding: '6px 14px', border: '1px solid #0052cc', background: '#fff', color: '#0052cc', borderRadius: '6px', cursor: 'pointer' }}>Close</button>
+                      <button onClick={() => setNotesFor(null)} style={{ padding: '6px 14px', border: '1px solid #0c2340', background: '#fff', color: '#0c2340', borderRadius: '6px', cursor: 'pointer' }}>Close</button>
                     </div>
                   </div>
                 </div>
@@ -461,13 +461,13 @@ export default function Dashboard() {
 
         {/* Find a customer */}
         <div className="card-hover" style={{ ...cardStyle, marginTop: '12px' }}>
-          <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#0052cc', marginBottom: '14px', marginTop: 0 }}>🔎 Find a customer</h3>
+          <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#0c2340', marginBottom: '14px', marginTop: 0 }}>🔎 Find a customer</h3>
           <input
             type="text"
             value={customerQuery}
             onChange={e => setCustomerQuery(e.target.value)}
             placeholder="Customer name or phone number"
-            style={{ width: '100%', padding: '10px 12px', border: '1px solid #0052cc', borderRadius: '6px', fontSize: '13px', boxSizing: 'border-box', marginBottom: '12px' }}
+            style={{ width: '100%', padding: '10px 12px', border: '1px solid #0c2340', borderRadius: '6px', fontSize: '13px', boxSizing: 'border-box', marginBottom: '12px' }}
           />
           <p style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>{customerQuery.trim() ? `${customerRows.length} match(es)` : 'Recent customers, newest first'}</p>
           <div style={{ maxHeight: '320px', overflowY: 'auto', border: '1px solid #e8e8e8', borderRadius: '6px' }}>
@@ -510,13 +510,13 @@ export default function Dashboard() {
               const name = rows[0]?.employee_name || 'Employee'
               const rated = rows.filter(r => r.feedback)
               const avgRating = rated.length ? (rated.reduce((sum, r) => sum + r.feedback, 0) / rated.length).toFixed(1) : '—'
-              const th = { textAlign: 'left', padding: '8px', fontSize: '12px', color: '#0052cc', borderBottom: '2px solid #0052cc', whiteSpace: 'nowrap' }
+              const th = { textAlign: 'left', padding: '8px', fontSize: '12px', color: '#0c2340', borderBottom: '2px solid #0c2340', whiteSpace: 'nowrap' }
               const td = { padding: '8px', fontSize: '12px', color: '#333', borderBottom: '1px solid #eee', verticalAlign: 'top' }
               return (
                 <>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', gap: '12px' }}>
                     <div>
-                      <h3 style={{ margin: 0, color: '#0052cc', fontSize: '20px' }}>{name}</h3>
+                      <h3 style={{ margin: 0, color: '#0c2340', fontSize: '20px' }}>{name}</h3>
                       <div style={{ fontSize: '13px', color: '#555', marginTop: '4px' }}>{rows.length} session(s) · avg rating {avgRating}★</div>
                     </div>
                     <button onClick={() => setDetailEmployee(null)} style={btnStyle(false)}>Close</button>
@@ -541,8 +541,8 @@ export default function Dashboard() {
                             <td style={{ ...td, maxWidth: '200px' }}>{r.comment ? `"${r.comment}"` : '—'}</td>
                             <td style={td}>{fmtScore(r.presence_score)}</td>
                             <td style={td}>{fmtScore(r.emotion_score)}</td>
-                            <td onClick={() => r.voice_score != null && setSelectedInteraction({ ...r, openTranscript: true })} style={{ ...td, cursor: r.voice_score != null ? 'pointer' : 'default', color: r.voice_score != null ? '#0052cc' : '#333', textDecoration: r.voice_score != null ? 'underline' : 'none', fontWeight: r.voice_score != null ? '700' : '400' }}>{fmtScore(r.voice_score)}</td>
-                            <td style={td}><span onClick={() => r.unified_score != null && setBreakdownId(r.id)} style={{ cursor: r.unified_score != null ? 'pointer' : 'default', color: '#0052cc', fontWeight: '700', textDecoration: r.unified_score != null ? 'underline' : 'none' }}>{fmtScore(r.unified_score)}</span></td>
+                            <td onClick={() => r.voice_score != null && setSelectedInteraction({ ...r, openTranscript: true })} style={{ ...td, cursor: r.voice_score != null ? 'pointer' : 'default', color: r.voice_score != null ? '#0c2340' : '#333', textDecoration: r.voice_score != null ? 'underline' : 'none', fontWeight: r.voice_score != null ? '700' : '400' }}>{fmtScore(r.voice_score)}</td>
+                            <td style={td}><span onClick={() => r.unified_score != null && setBreakdownId(r.id)} style={{ cursor: r.unified_score != null ? 'pointer' : 'default', color: '#0c2340', fontWeight: '700', textDecoration: r.unified_score != null ? 'underline' : 'none' }}>{fmtScore(r.unified_score)}</span></td>
                             <td style={td}>{r.response_seconds != null ? `${r.response_seconds}s` : '—'}</td>
                             <td style={td}>{['presence', 'emotion', 'response', 'feedback', 'voice'].filter(k => !(r.signals_used || []).includes(k)).join(', ') || '—'}</td>
                             <td style={td}>{processButton(r, true)}</td>

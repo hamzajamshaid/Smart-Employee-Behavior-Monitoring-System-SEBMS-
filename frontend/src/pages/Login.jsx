@@ -98,7 +98,7 @@ export default function Login() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #e8f0ff 0%, #dbeafe 100%)',
+      background: 'linear-gradient(135deg, #e8f1f5 0%, #dde8f0 100%)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -108,28 +108,14 @@ export default function Login() {
         background: '#fff',
         borderRadius: '12px',
         padding: '48px 40px',
-        boxShadow: '0 8px 32px rgba(0,82,204,0.15)',
+        boxShadow: '0 8px 32px rgba(12,35,64,0.15)',
         maxWidth: '450px',
         width: '100%',
         border: '1px solid #e8e8e8'
       }}>
         {/* Logo & Title */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <div style={{
-            width: '64px',
-            height: '64px',
-            borderRadius: '12px',
-            background: 'linear-gradient(135deg, #0052cc 0%, #003d99 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 16px',
-            boxShadow: '0 4px 12px rgba(0,82,204,0.2)'
-          }}>
-            <span style={{ fontSize: '32px', fontWeight: '800', color: '#fff' }}>S</span>
-          </div>
-          <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#0052cc', margin: '0 0 4px' }}>SEBMS</h1>
-          <p style={{ fontSize: '13px', color: '#666', margin: 0 }}>Smart Employee Behavior Monitoring</p>
+          <img src="/sebms-logo.png" alt="SEBMS" style={{ width: '260px', maxWidth: '100%', height: 'auto', display: 'block', margin: '0 auto 12px' }} />
         </div>
 
         {/* Form */}
@@ -155,7 +141,7 @@ export default function Login() {
                 boxSizing: 'border-box',
                 transition: 'all 0.15s'
               }}
-              onFocus={e => (e.currentTarget.style.borderColor = '#0052cc', e.currentTarget.style.background = '#fff')}
+              onFocus={e => (e.currentTarget.style.borderColor = '#2ec4b6', e.currentTarget.style.background = '#fff')}
               onBlur={e => (e.currentTarget.style.borderColor = '#e8e8e8', e.currentTarget.style.background = '#f9fafb')}
               required
             />
@@ -182,7 +168,7 @@ export default function Login() {
                 boxSizing: 'border-box',
                 transition: 'all 0.15s'
               }}
-              onFocus={e => (e.currentTarget.style.borderColor = '#0052cc', e.currentTarget.style.background = '#fff')}
+              onFocus={e => (e.currentTarget.style.borderColor = '#2ec4b6', e.currentTarget.style.background = '#fff')}
               onBlur={e => (e.currentTarget.style.borderColor = '#e8e8e8', e.currentTarget.style.background = '#f9fafb')}
               required
             />
@@ -209,8 +195,8 @@ export default function Login() {
                   }}
                   style={{
                     padding: '10px 12px',
-                    border: `2px solid ${role === item.role ? '#0052cc' : '#e8e8e8'}`,
-                    background: role === item.role ? '#0052cc' : '#fff',
+                    border: `2px solid ${role === item.role ? '#0c2340' : '#e8e8e8'}`,
+                    background: role === item.role ? '#0c2340' : '#fff',
                     color: role === item.role ? '#fff' : '#333',
                     borderRadius: '6px',
                     cursor: 'pointer',
@@ -218,7 +204,7 @@ export default function Login() {
                     fontWeight: role === item.role ? '700' : '600',
                     transition: 'all 0.15s'
                   }}
-                  onMouseEnter={e => role !== item.role && (e.currentTarget.style.borderColor = '#0052cc', e.currentTarget.style.background = '#e8f0ff')}
+                  onMouseEnter={e => role !== item.role && (e.currentTarget.style.borderColor = '#2ec4b6', e.currentTarget.style.background = '#e8f1f5')}
                   onMouseLeave={e => role !== item.role && (e.currentTarget.style.borderColor = '#e8e8e8', e.currentTarget.style.background = '#fff')}
                 >
                   {item.role}
@@ -251,7 +237,7 @@ export default function Login() {
             disabled={loading || !username || !password}
             style={{
               padding: '12px 16px',
-              background: loading || !username || !password ? '#d1d5db' : 'linear-gradient(135deg, #0052cc 0%, #003d99 100%)',
+              background: loading || !username || !password ? '#d1d5db' : 'linear-gradient(135deg, #0c2340 0%, #13315c 100%)',
               color: '#fff',
               border: 'none',
               borderRadius: '8px',
@@ -265,10 +251,9 @@ export default function Login() {
               gap: '8px',
               marginTop: '8px'
             }}
-            onMouseEnter={e => !loading && username && password && (e.currentTarget.style.transform = 'translateY(-2px)', e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,82,204,0.3)')}
+            onMouseEnter={e => !loading && username && password && (e.currentTarget.style.transform = 'translateY(-2px)', e.currentTarget.style.boxShadow = '0 8px 20px rgba(12,35,64,0.3)')}
             onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)', e.currentTarget.style.boxShadow = 'none')}
           >
-            <span>🔐</span>
             {loading ? 'Signing In...' : 'Sign In'}
           </button>
         </form>
@@ -277,11 +262,11 @@ export default function Login() {
         <div style={{
           marginTop: '24px',
           padding: '14px',
-          background: '#e8f0ff',
+          background: '#e8f1f5',
           borderRadius: '8px',
-          border: '1px solid #d0e0ff',
+          border: '1px solid #cfe0ea',
           fontSize: '12px',
-          color: '#0052cc'
+          color: '#0c2340'
         }}>
           <p style={{ margin: '0 0 8px 0', fontWeight: '700' }}>Demo usernames (ask your administrator for passwords):</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
