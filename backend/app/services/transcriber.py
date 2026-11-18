@@ -20,6 +20,7 @@ import soundfile as sf
 from faster_whisper import WhisperModel
 
 path, model_size = sys.argv[1], sys.argv[2]
+language = sys.argv[3] if len(sys.argv) > 3 and sys.argv[3] else None
 data, sr = sf.read(path, dtype='float32')
 if data.ndim > 1:
     data = data.mean(axis=1)
@@ -32,7 +33,7 @@ if duration < 1.0:
                                   'error': 'shorter than 1 second'}))
     sys.exit(0)
 model = WhisperModel(model_size, device='cpu', compute_type='int8')
-segments, info = model.transcribe(data, beam_size=5, vad_filter=False)
+segments, info = model.transcribe(data, beam_size=5, vad_filter=False, language=language)
 text = ' '.join(seg.text.strip() for seg in segments).strip()
 print('RESULT:' + json.dumps({
     'status': 'ok' if text else 'no_speech_recognized',
@@ -48,8 +49,9 @@ class Transcriber:
     """Speech-to-text with faster-whisper (EXPERIMENTAL).
     Runs in venv-voice. Returns transcript=None with a status when nothing usable was produced."""
 
-    def transcribe(self, audio_path: str) -> dict:
-        base = {'model': f'faster-whisper-{MODEL_SIZE}', 'transcript': None,
+    def transcribe(self, audio_path: str, model_size=None, language=None) -> dict:
+        size = model_size or MODEL_SIZE
+        base = {'model': f'faster-whisper-{size}', 'transcript': None,
                 'language': None, 'language_probability': None,
                 'duration_seconds': None, 'experimental': True}
 
@@ -62,7 +64,7 @@ class Transcriber:
         with os.fdopen(fd, 'w') as f:
             f.write(_CHILD_SCRIPT)
         try:
-            proc = subprocess.run([_VOICE_PYTHON, script_path, audio_path, MODEL_SIZE],
+            proc = subprocess.run([_VOICE_PYTHON, script_path, audio_path, size, language or ''],
                                   capture_output=True, text=True,
                                   timeout=TRANSCRIBE_TIMEOUT_SECONDS)
         except subprocess.TimeoutExpired:

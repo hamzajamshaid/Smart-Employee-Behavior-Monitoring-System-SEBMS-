@@ -7,7 +7,8 @@ class FileManager:
     
     def __init__(self):
         # Use relative paths from backend root
-        self.videos_dir = 'storage/videos'
+        ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+        self.videos_dir = os.path.join(ROOT, 'storage', 'videos')
         self.audio_dir = 'storage/audio'
         self.frames_dir = 'storage/frames'
         self.logs_dir = 'storage/logs'

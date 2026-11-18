@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import API_BASE from '../config'
+import CredentialsModal from '../components/CredentialsModal'
+import CredentialsFormModal from '../components/CredentialsFormModal'
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
 export default function EmployeeDetail() {
@@ -12,7 +14,24 @@ export default function EmployeeDetail() {
   const [weeklyData, setWeeklyData] = useState([])
   const [period, setPeriod] = useState('month')
   const [loading, setLoading] = useState(true)
-  const token = localStorage.getItem('token')
+  const [credentials, setCredentials] = useState(null)
+  const [credentialsEdit, setCredentialsEdit] = useState(null)
+
+  const handleResetLogin = async () => {
+    const typed = window.prompt(`New password for ${employee.name} (at least 6 characters).\nLeave blank to auto-generate one.`, '')
+    if (typed === null) return
+    if (typed.trim() && typed.trim().length < 6) { alert('❌ Password must be at least 6 characters'); return }
+    const body = typed.trim() ? { password: typed.trim() } : {}
+    try {
+      const token = sessionStorage.getItem('token')
+      const headers = { 'Authorization': `Bearer ${token}` }
+      const res = await axios.put(`${API_BASE}/api/employees/${employee.id}/reset-password`, body, { headers })
+      setCredentials({ title: 'Login reset', name: employee.name, code: employee.employee_code, password: res.data.new_password })
+    } catch (err) {
+      alert('❌ Error: ' + (err.response?.data?.error || 'Failed'))
+    }
+  }
+  const token = sessionStorage.getItem('token')
 
   useEffect(() => {
     if (!token) {
@@ -50,7 +69,7 @@ export default function EmployeeDetail() {
     return <div className="px-3 py-3 text-center"><p className="text-danger">Employee not found</p></div>
   }
 
-  const scoreColor = employee.unified_score >= 80 ? '#10b981' : employee.unified_score >= 65 ? '#f59e0b' : '#ef4444'
+  const scoreColor = employee.unified_score == null ? '#9ca3af' : employee.unified_score >= 80 ? '#10b981' : employee.unified_score >= 65 ? '#f59e0b' : '#ef4444'
   
   const metrics = [
     { label: 'Presence Rate', value: `${employee.avg_presence || 0}%`, target: '≥ 90%', status: (employee.avg_presence || 0) >= 90 ? 'success' : 'warning' },
@@ -68,14 +87,25 @@ export default function EmployeeDetail() {
 
   return (
     <div className="px-3 py-3">
+      {credentialsEdit && (<CredentialsFormModal employee={credentialsEdit} token={sessionStorage.getItem('token')} onClose={() => setCredentialsEdit(null)} onSaved={(c) => { setCredentialsEdit(null); setEmployee(prev => ({ ...prev, employee_code: c.code, status: c.status })); setCredentials(c) }} />)}
+      {credentials && (
+        <CredentialsModal
+          title={credentials.title}
+          employeeName={credentials.name}
+          code={credentials.code}
+          password={credentials.password}
+          onClose={() => setCredentials(null)}
+        />
+      )}
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '32px', paddingBottom: '24px', borderBottom: '2px solid var(--neutral-200)' }}>
         <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: 'var(--primary)', padding: 0 }}>←</button>
         <div style={{ flex: 1 }}>
           <h1 style={{ margin: 0, marginBottom: '4px' }}>{employee.name}</h1>
           <p className="text-muted" style={{ margin: 0, fontSize: '13px' }}>Code: {employee.employee_code} | Counter: {employee.counter_id} | {employee.status}</p>
         </div>
+        <button className="btn-primary" onClick={() => setCredentialsEdit(employee)} style={{ fontSize: '13px', padding: '8px 14px', marginRight: '16px' }}>Credentials</button>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: '36px', fontWeight: '700', color: scoreColor }}>{employee.unified_score || 0}</div>
+          <div style={{ fontSize: '36px', fontWeight: '700', color: scoreColor }}>{employee.unified_score == null ? '—' : Math.round(employee.unified_score)}</div>
           <p className="text-muted" style={{ margin: 0, fontSize: '11px' }}>Overall Score</p>
         </div>
       </div>

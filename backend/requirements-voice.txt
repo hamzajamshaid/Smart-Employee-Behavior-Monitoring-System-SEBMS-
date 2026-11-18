@@ -3,3 +3,6 @@ silero-vad==6.2.3
 torch==2.14.1
 soundfile==0.14.0
 numpy
+
+faster-whisper==1.2.1
+transformers==5.22.2

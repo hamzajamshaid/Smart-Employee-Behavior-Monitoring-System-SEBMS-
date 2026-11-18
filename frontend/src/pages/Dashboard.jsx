@@ -1,3 +1,5 @@
+import ScoreBreakdownModal from '../components/ScoreBreakdownModal'
+import { createPortal } from 'react-dom'
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import API_BASE from '../config'
@@ -6,10 +8,10 @@ import QRModal from '../components/QRModal'
 import InteractionModal from '../components/InteractionModal'
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
-const COLORS = { 'Ahmed Raza': '#0052cc', 'Sara Khan': '#00a86b', 'Bilal Ahmed': '#ff6b35' }
-const PERIODS = [{ label: 'Today', value: 'today' }, { label: 'This Week', value: 'week' }, { label: 'This Month', value: 'month' }, { label: 'Custom', value: 'custom' }]
+const COLORS = { 'Ahmed Raza': '#0c2340', 'Sara Khan': '#00a86b', 'Bilal Ahmed': '#ff6b35' }
+const PERIODS = [{ label: 'Today', value: 'today' }, { label: 'This Week', value: 'week' }, { label: 'This Month', value: 'month' }, { label: 'All time', value: 'all' }, { label: 'Custom', value: 'custom' }]
 
-const btnStyle = (active) => ({ padding: '8px 16px', borderRadius: '6px', border: '1px solid #0052cc', background: active ? '#0052cc' : '#fff', color: active ? '#fff' : '#0052cc', cursor: 'pointer', fontSize: '13px', fontWeight: active ? '600' : '500', transition: 'all 0.15s linear' })
+const btnStyle = (active) => ({ padding: '8px 16px', borderRadius: '6px', border: '1px solid #0c2340', background: active ? '#0c2340' : '#fff', color: active ? '#fff' : '#0c2340', cursor: 'pointer', fontSize: '13px', fontWeight: active ? '600' : '500', transition: 'all 0.15s linear' })
 
 const cardStyle = { background: '#fff', borderRadius: '10px', padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', border: '1px solid #e8e8e8', transition: 'all 0.2s linear' }
 
@@ -21,16 +23,16 @@ const STATUS_STYLE = {
   detector_miss: ['#7c3aed', 'Detector miss'],
   failed: ['#e53935', 'Failed'],
   not_processed: ['#999', 'Not processed'],
-  in_progress: ['#0052cc', 'In progress'],
+  in_progress: ['#0c2340', 'In progress'],
   legacy: ['#999', 'Legacy'],
 };
 const statusBadge = s => {
   const [c, l] = STATUS_STYLE[s] || ['#999', s || '—'];
   return <span style={{ display: 'inline-block', marginTop: '4px', fontSize: '10px', fontWeight: '700', color: c, border: `1px solid ${c}`, borderRadius: '4px', padding: '1px 6px' }}>{l}</span>;
 };
-const clampOrNull = v => (v == null ? null : Math.min(100, Math.max(0, v)));
 const fmtNum = v => (v == null ? '—' : Math.round(v));
 const fmtPct = v => (v == null ? '—' : `${Math.round(v)}%`);
+const fmtScore = v => (v == null ? '—' : Number(v).toFixed(1));
 const fmtSec = v => (v == null ? '—' : `${Number(v).toFixed(1)}s`);
 const fmtStars = v => (v == null ? '—' : `${Number(v).toFixed(1)}★`);
 const mapSummary = d => (d ? {
@@ -50,7 +52,7 @@ const mapInteraction = r => ({
   emotion: r.emotion_score,
   voice: r.voice_score,
   response: r.response_seconds,
-  feedback: null,
+  feedback: r.feedback ?? null,
   status: r.processing_status,
 });
 
@@ -61,15 +63,107 @@ export default function Dashboard() {
   const [employees, setEmployees] = useState([])
   const [selectedEmp, setSelectedEmp] = useState(null)
   const [period, setPeriod] = useState('month')
+  const [idQuery, setIdQuery] = useState('')
+  const [notesFor, setNotesFor] = useState(null)
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [selectedInteraction, setSelectedInteraction] = useState(null)
   const [qrInteraction, setQrInteraction] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [customerQuery, setCustomerQuery] = useState('')
+  const [batchMsg, setBatchMsg] = useState('')
+  const [detailEmployee, setDetailEmployee] = useState(null)
+  const [breakdownId, setBreakdownId] = useState(null)
+  const [running, setRunning] = useState(() => JSON.parse(localStorage.getItem('sebms:jobs:v2') || '{}'))
+  const [, setNow] = useState(0)
+  const customerQ = customerQuery.trim().toLowerCase()
+  const customerDigits = customerQuery.replace(/\D/g, '')
+  const customerRows = interactions.filter(i => i.customer_name && (!customerQ || i.customer_name.toLowerCase().includes(customerQ) || (customerDigits.length > 0 && (i.customer_phone || '').includes(customerDigits)))).slice(0, 100)
+  const refreshInteractions = () => {
+    axios.get(`${API_BASE}/api/dashboard/interactions${buildParams()}`, { headers })
+      .then(res => setInteractions((Array.isArray(res.data) ? res.data : []).map(mapInteraction)))
+      .catch(() => {})
+  }
+  useEffect(() => {
+    if (Object.keys(running).length === 0) return
+    const t = setInterval(() => setNow(n => n + 1), 1000)
+    return () => clearInterval(t)
+  }, [running])
+  const updateRunning = (fn) => setRunning(prev => {
+    const next = fn(prev)
+    localStorage.setItem('sebms:jobs:v2', JSON.stringify(next))
+    return next
+  })
+  const startProcess = async (id) => {
+    const taskId = await runBatch([id])
+    if (taskId) updateRunning(prev => ({ ...prev, [id]: { taskId, at: Date.now() } }))
+  }
+  const processButton = (row, small = false) => {
+    const id = row.id
+    const busy = Object.keys(running).length > 0
+    const base = { padding: small ? '6px 10px' : '10px 16px', borderRadius: '6px', border: 'none', fontWeight: 600, fontSize: small ? '12px' : '13px', color: '#fff', whiteSpace: 'nowrap' }
+    if (running[id]) {
+      const hist = JSON.parse(localStorage.getItem('sebms:durations') || '[]')
+      const expected = hist.length ? Math.round(hist.reduce((a, b) => a + b, 0) / hist.length) : 60
+      const left = expected - Math.max(0, Math.round((Date.now() - running[id].at) / 1000))
+      return <button disabled style={{ ...base, background: '#8fa8d8', cursor: 'not-allowed' }}>{left > 0 ? `Processing… ${left}s` : 'Finishing…'}</button>
+    }
+    if (row.processing_status === 'scored') return <button onClick={() => startProcess(id)} disabled={busy} style={{ ...base, background: '#16a34a', cursor: busy ? 'not-allowed' : 'pointer' }}>✓ Processed</button>
+    return <button onClick={() => startProcess(id)} disabled={busy} style={{ ...base, background: '#0c2340', cursor: busy ? 'not-allowed' : 'pointer' }}>Process this session</button>
+  }
+
+  useEffect(() => {
+    const ids = Object.keys(running)
+    if (ids.length === 0) return
+    const t = setInterval(async () => {
+      for (const id of ids) {
+        const row = interactions.find(x => String(x.id) === id)
+        if (Date.now() - running[id].at > 10000 && row && row.processing_status === 'scored') {
+          updateRunning(prev => { const n = { ...prev }; delete n[id]; return n })
+          continue
+        }
+        if (Date.now() - running[id].at > 10 * 60 * 1000) {
+          updateRunning(prev => { const n = { ...prev }; delete n[id]; return n })
+          refreshInteractions()
+          continue
+        }
+        try {
+          const res = await axios.get(`${API_BASE}/api/batch/status/${running[id].taskId}`, { headers })
+          if (res.data.status === 'SUCCESS' || res.data.status === 'FAILURE') {
+            if (res.data.status === 'SUCCESS') {
+              const took = Math.round((Date.now() - running[id].at) / 1000)
+              const hist = JSON.parse(localStorage.getItem('sebms:durations') || '[]')
+              localStorage.setItem('sebms:durations', JSON.stringify([...hist, took].slice(-10)))
+            }
+            updateRunning(prev => { const n = { ...prev }; delete n[id]; return n })
+            refreshInteractions()
+          }
+        } catch (e) {
+          console.warn('Batch status check failed for session', id, e.message)
+        }
+      }
+    }, 3000)
+    return () => clearInterval(t)
+  }, [running, interactions])
+
+  const runBatch = async (ids = []) => {
+    let taskId = null
+    try {
+      const token = sessionStorage.getItem('token')
+      const res = await axios.post(`${API_BASE}/api/batch/trigger`, { interaction_ids: ids }, { headers: { Authorization: `Bearer ${token}` } })
+      taskId = res.data.task_id || null
+      setBatchMsg(ids.length ? `Session #${ids[0]} queued for processing` : 'Batch queued (last 24 hours)')
+      ;[10, 30, 60, 120, 180].forEach(sec => setTimeout(refreshInteractions, sec * 1000))
+    } catch (e) {
+      setBatchMsg('Batch failed: ' + (e.response?.data?.error || e.message))
+    }
+    setTimeout(() => setBatchMsg(''), 8000)
+    return taskId
+  }
   const [showDropdown, setShowDropdown] = useState(false)
   const [topPerformers, setTopPerformers] = useState([])
 
-  const token = localStorage.getItem('token')
+  const token = sessionStorage.getItem('token')
   const headers = { Authorization: `Bearer ${token}` }
   const filteredEmployees = employees.filter(e => e.name.toLowerCase().includes(searchQuery.toLowerCase()))
   const selectedEmpName = employees.find(e => e.id === selectedEmp)?.name || 'All Employees'
@@ -78,6 +172,7 @@ export default function Dashboard() {
 
   const buildParams = () => {
     let p = period === 'custom' ? '' : `period=${period}`
+    if (period === 'all') p += '&limit=1000'
     if (period === 'custom' && dateFrom && dateTo) p = `date_from=${dateFrom}&date_to=${dateTo}`
     if (selectedEmp) p += `&employee_id=${selectedEmp}`
     return p ? `?${p}` : ''
@@ -157,14 +252,14 @@ export default function Dashboard() {
       <style>{`
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .card-hover { transition: all 0.2s linear; }
-        .card-hover:hover { box-shadow: 0 8px 24px rgba(0,82,204,0.15); transform: translateY(-2px); }
+        .card-hover:hover { box-shadow: 0 8px 24px rgba(12,35,64,0.15); transform: translateY(-2px); }
       `}</style>
 
       {/* Sticky Header */}
-      <div style={{ position: 'sticky', top: 0, background: '#e8f0ff', borderBottom: '2px solid #0052cc', padding: '16px 30px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', zIndex: 50 }}>
+      <div style={{ position: 'sticky', top: 0, background: '#e8f1f5', borderTop: '1px solid #0c2340', borderBottom: '1px solid #0c2340', padding: '0 30px', height: '121px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', zIndex: 50 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '30px', marginBottom: '12px' }}>
           <div style={{ flex: 1 }}>
-            <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#0052cc', margin: 0, lineHeight: '1.1' }}>Performance Dashboard</h1>
+            <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#0c2340', margin: 0, lineHeight: '1.1' }}>Performance Dashboard</h1>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
             <div style={{ position: 'relative', width: '300px' }}>
@@ -175,18 +270,18 @@ export default function Dashboard() {
                 onChange={e => setSearchQuery(e.target.value)} 
                 onFocus={() => setShowDropdown(true)} 
                 onBlur={() => setTimeout(() => setShowDropdown(false), 200)} 
-                style={{ width: '100%', padding: '10px 12px 10px 36px', border: '1px solid #0052cc', borderRadius: '6px', fontSize: '13px', boxShadow: '0 1px 3px rgba(0,82,204,0.1)', transition: 'all 0.15s linear', color: '#1a1a1a', background: '#fff' }} 
-                onMouseEnter={e => e.target.style.borderColor = '#003d99'} 
-                onMouseLeave={e => e.target.style.borderColor = '#0052cc'} 
+                style={{ width: '100%', padding: '10px 12px 10px 36px', border: '1px solid #0c2340', borderRadius: '6px', fontSize: '13px', boxShadow: '0 1px 3px rgba(12,35,64,0.1)', transition: 'all 0.15s linear', color: '#1a1a1a', background: '#fff' }} 
+                onMouseEnter={e => e.target.style.borderColor = '#13315c'} 
+                onMouseLeave={e => e.target.style.borderColor = '#0c2340'} 
               />
-              <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#0052cc', fontSize: '14px' }}>🔍</span>
+              <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#0c2340', fontSize: '14px' }}>🔍</span>
               {showDropdown && filteredEmployees.length > 0 && (
-                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#fff', border: '1px solid #0052cc', borderTop: 'none', borderRadius: '0 0 6px 6px', maxHeight: '200px', overflowY: 'auto', zIndex: 10, boxShadow: '0 4px 12px rgba(0,82,204,0.15)', marginTop: '2px' }}>
+                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#fff', border: '1px solid #0c2340', borderTop: 'none', borderRadius: '0 0 6px 6px', maxHeight: '200px', overflowY: 'auto', zIndex: 10, boxShadow: '0 4px 12px rgba(12,35,64,0.15)', marginTop: '2px' }}>
                   <div 
-                    style={{ padding: '8px 12px', cursor: 'pointer', fontSize: '13px', color: '#333', background: !selectedEmp ? '#e8f0ff' : 'transparent', transition: 'background 0.15s linear', fontWeight: !selectedEmp ? '600' : '500' }} 
+                    style={{ padding: '8px 12px', cursor: 'pointer', fontSize: '13px', color: '#333', background: !selectedEmp ? '#e8f1f5' : 'transparent', transition: 'background 0.15s linear', fontWeight: !selectedEmp ? '600' : '500' }} 
                     onClick={() => { setSelectedEmp(null); setSearchQuery(''); setShowDropdown(false) }}
-                    onMouseEnter={e => e.currentTarget.style.background = '#e8f0ff'} 
-                    onMouseLeave={e => e.currentTarget.style.background = !selectedEmp ? '#e8f0ff' : 'transparent'}
+                    onMouseEnter={e => e.currentTarget.style.background = '#e8f1f5'} 
+                    onMouseLeave={e => e.currentTarget.style.background = !selectedEmp ? '#e8f1f5' : 'transparent'}
                   >
                     All Employees
                   </div>
@@ -194,9 +289,9 @@ export default function Dashboard() {
                     <div 
                       key={e.id} 
                       onClick={() => { setSelectedEmp(e.id); setSearchQuery(''); setShowDropdown(false) }} 
-                      style={{ padding: '8px 12px', cursor: 'pointer', fontSize: '13px', color: '#333', background: selectedEmp === e.id ? '#e8f0ff' : 'transparent', borderLeft: selectedEmp === e.id ? '3px solid #0052cc' : '3px solid transparent', transition: 'background 0.15s linear', fontWeight: selectedEmp === e.id ? '600' : '500' }} 
-                      onMouseEnter={e => e.currentTarget.style.background = '#e8f0ff'} 
-                      onMouseLeave={e => e.currentTarget.style.background = selectedEmp === e.id ? '#e8f0ff' : 'transparent'}
+                      style={{ padding: '8px 12px', cursor: 'pointer', fontSize: '13px', color: '#333', background: selectedEmp === e.id ? '#e8f1f5' : 'transparent', borderLeft: selectedEmp === e.id ? '3px solid #0c2340' : '3px solid transparent', transition: 'background 0.15s linear', fontWeight: selectedEmp === e.id ? '600' : '500' }} 
+                      onMouseEnter={e => e.currentTarget.style.background = '#e8f1f5'} 
+                      onMouseLeave={e => e.currentTarget.style.background = selectedEmp === e.id ? '#e8f1f5' : 'transparent'}
                     >
                       {e.name}
                     </div>
@@ -205,18 +300,20 @@ export default function Dashboard() {
               )}
             </div>
             <div style={{ fontSize: '12px', color: '#333', fontWeight: '600' }}>
-              Viewing: <span style={{ color: '#0052cc', fontWeight: '700' }}>{selectedEmpName}</span> • <span style={{ color: '#0052cc', fontWeight: '700' }}>{periodLabel}</span>
+              Viewing: <span style={{ color: '#0c2340', fontWeight: '700' }}>{selectedEmpName}</span> • <span style={{ color: '#0c2340', fontWeight: '700' }}>{periodLabel}</span>
             </div>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           <span style={{ fontSize: '13px', color: '#333', fontWeight: '700' }}>Period:</span>
           {PERIODS.map(p => (<button key={p.value} onClick={() => setPeriod(p.value)} style={btnStyle(period === p.value)}>{p.label}</button>))}
+          <button onClick={() => runBatch([])} style={btnStyle(false)}>▶ Run batch</button>
+          {batchMsg && <span style={{ fontSize: '12px', color: '#0c2340', fontWeight: 600 }}>{batchMsg}</span>}
           {period === 'custom' && (
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginLeft: '8px' }}>
-              <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} style={{ padding: '6px 10px', border: '1px solid #0052cc', borderRadius: '5px', fontSize: '12px', color: '#1a1a1a', background: '#fff' }} />
+              <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} style={{ padding: '6px 10px', border: '1px solid #0c2340', borderRadius: '5px', fontSize: '12px', color: '#1a1a1a', background: '#fff' }} />
               <span style={{ color: '#333', fontSize: '12px', fontWeight: '600' }}>to</span>
-              <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} style={{ padding: '6px 10px', border: '1px solid #0052cc', borderRadius: '5px', fontSize: '12px', color: '#1a1a1a', background: '#fff' }} />
+              <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} style={{ padding: '6px 10px', border: '1px solid #0c2340', borderRadius: '5px', fontSize: '12px', color: '#1a1a1a', background: '#fff' }} />
             </div>
           )}
         </div>
@@ -235,7 +332,7 @@ export default function Dashboard() {
         {summary ? (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '12px' }}>
             <div className="card-hover" style={{ animation: 'fadeIn 0.3s ease-out' }}>
-              <KPICard label="Unified Score" value={`${fmtNum(summary.unified_score)}`} sub="out of 100" color="#0052cc" />
+              <KPICard label="Unified Score" value={`${fmtNum(summary.unified_score)}`} sub="out of 100" color="#0c2340" />
             </div>
             <div className="card-hover" style={{ animation: 'fadeIn 0.3s ease-out 0.05s both' }}>
               <KPICard label="Avg presence score" value={`${fmtNum(summary.presence_rate)}`} sub="average of measured presence scores" color="#00a86b" />
@@ -256,28 +353,28 @@ export default function Dashboard() {
         {/* Top Performers */}
         {topPerformers.length === 0 ? (
           <div className="card-hover" style={cardStyle}>
-            <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#0052cc', marginBottom: '14px', marginTop: 0 }}>🏆 Top Performers</h3>
+            <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#0c2340', marginBottom: '14px', marginTop: 0 }}>🏆 Top Performers</h3>
             <p style={{ fontSize: '13px', color: '#666', margin: 0 }}>
               Not enough measured data to rank. A ranking needs at least 2 employees with measured interactions.
             </p>
           </div>
         ) : (
           <div className="card-hover" style={{ ...cardStyle, marginBottom: '12px' }}>
-            <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#0052cc', marginBottom: '14px', marginTop: 0 }}>🏆 Top Performers</h3>
+            <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#0c2340', marginBottom: '14px', marginTop: 0 }}>🏆 Top Performers</h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>
               {topPerformers.map((emp, idx) => (
                 <div 
                   key={emp.id} 
                   className="card-hover" 
-                  style={{ background: 'linear-gradient(135deg, #e8f0ff 0%, #fff 100%)', border: '1px solid #d0e0ff', borderRadius: '8px', padding: '16px', textAlign: 'center', position: 'relative', cursor: 'pointer', transition: 'all 0.2s linear' }} 
-                  onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,82,204,0.15)' }} 
+                  style={{ background: 'linear-gradient(135deg, #e8f1f5 0%, #fff 100%)', border: '1px solid #d0e0ff', borderRadius: '8px', padding: '16px', textAlign: 'center', position: 'relative', cursor: 'pointer', transition: 'all 0.2s linear' }} 
+                  onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 16px rgba(12,35,64,0.15)' }} 
                   onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none' }}
                 >
                   <div style={{ position: 'absolute', top: '-8px', right: '10px', background: idx === 0 ? '#ffd700' : idx === 1 ? '#c0c0c0' : '#cd7f32', color: idx === 1 ? '#666' : '#fff', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '14px', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
                     {idx + 1}
                   </div>
                   <p style={{ fontSize: '14px', fontWeight: '700', color: '#1a1a1a', margin: '8px 0 10px' }}>{emp.name}</p>
-                  <p style={{ fontSize: '26px', fontWeight: '800', color: '#0052cc', margin: '0 0 4px' }}>{emp.score}</p>
+                  <p style={{ fontSize: '26px', fontWeight: '800', color: '#0c2340', margin: '0 0 4px' }}>{emp.score}</p>
                   <p style={{ fontSize: '11px', color: '#666', margin: '0', fontWeight: '600' }}>Score</p>
                 </div>
               ))}
@@ -286,16 +383,16 @@ export default function Dashboard() {
         )}
 
         {/* Charts Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '12px', marginTop: '20px', marginBottom: '12px' }}>
           {/* Score Trend */}
           <div className="card-hover" style={cardStyle}>
-            <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#0052cc', marginBottom: '14px', marginTop: 0 }}>📈 Score Trend</h3>
+            <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#0c2340', marginBottom: '14px', marginTop: 0 }}>📈 Score Trend</h3>
             {trendData.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={trendData} margin={{ top: 5, right: 10, left: -15, bottom: 0 }}>
                   <XAxis dataKey="date" hide />
                   <YAxis domain={[50, 100]} fontSize={11} stroke="#ddd" />
-                  <Tooltip contentStyle={{ background: '#fff', border: '2px solid #0052cc', borderRadius: '6px', boxShadow: '0 2px 8px rgba(0,82,204,0.15)', padding: '8px 12px', fontSize: '12px' }} />
+                  <Tooltip contentStyle={{ background: '#fff', border: '2px solid #0c2340', borderRadius: '6px', boxShadow: '0 2px 8px rgba(12,35,64,0.15)', padding: '8px 12px', fontSize: '12px' }} />
                   <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '12px', color: '#333' }} />
                   {Object.keys(COLORS).map(name => trendData[0]?.[name] !== undefined ? <Line key={name} type="linear" dataKey={name} stroke={COLORS[name]} strokeWidth={2.5} dot={false} /> : null)}
                 </LineChart>
@@ -307,14 +404,15 @@ export default function Dashboard() {
 
           {/* Recent Interactions */}
           <div className="card-hover" style={cardStyle}>
-            <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#0052cc', marginBottom: '6px', marginTop: 0 }}>📋 Recent Interactions</h3>
+            <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#0c2340', marginBottom: '6px', marginTop: 0 }}>📋 Recent Interactions</h3>
             <p style={{ fontSize: '12px', color: '#666', marginBottom: '12px' }}>Last {interactions.length} interactions</p>
+            <input type="text" value={idQuery} onChange={e => setIdQuery(e.target.value)} placeholder="Search session ID (e.g. 1297)" style={{ width: '100%', padding: '8px 10px', border: '1px solid #0c2340', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box', marginBottom: '8px' }} />
             <div style={{ maxHeight: '345px', overflowY: 'auto', border: '1px solid #e8e8e8', borderRadius: '6px' }}>
               <table style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse' }}>
-                <thead style={{ position: 'sticky', top: 0, background: '#e8f0ff', zIndex: 10 }}>
-                  <tr style={{ borderBottom: '2px solid #0052cc' }}>
-                    {['Employee', 'Time', 'Presence score', 'Expression (exp.)', 'Voice (exp.)', 'Response', 'Rating', 'QR'].map(h => (
-                      <th key={h} style={{ textAlign: h === 'Employee' ? 'left' : 'center', padding: '10px 8px', color: '#0052cc', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                <thead style={{ position: 'sticky', top: 0, background: '#e8f1f5', zIndex: 10 }}>
+                  <tr style={{ borderBottom: '2px solid #0c2340' }}>
+                    {['Session', 'Employee', "What's missing"].map(h => (
+                      <th key={h} style={{ textAlign: h === 'Employee' ? 'left' : 'center', padding: '10px 8px', color: '#0c2340', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
                         {h}
                       </th>
                     ))}
@@ -322,121 +420,76 @@ export default function Dashboard() {
                 </thead>
                 <tbody>
                   {interactions.length > 0 ? (
-                    interactions.map((i, idx) => (
+                    interactions.filter(i => !idQuery.trim() || String(i.id).includes(idQuery.trim())).map((i, idx) => (
                       <tr 
                         key={i.id} 
-                        style={{ borderBottom: '1px solid #e8f0ff', cursor: 'pointer', transition: 'background 0.15s linear', background: idx % 2 === 0 ? '#fafbfc' : '#fff' }} 
-                        onMouseEnter={e => e.currentTarget.style.background = '#e8f0ff'} 
+                        style={{ borderBottom: '1px solid #e8f1f5', cursor: 'pointer', transition: 'background 0.15s linear', background: idx % 2 === 0 ? '#fafbfc' : '#fff' }} 
+                        onMouseEnter={e => e.currentTarget.style.background = '#e8f1f5'} 
                         onMouseLeave={e => e.currentTarget.style.background = idx % 2 === 0 ? '#fafbfc' : '#fff'}
                       >
+                        <td onClick={() => setSelectedInteraction(i)} style={{ padding: '10px 8px', textAlign: 'center', color: '#0c2340', fontWeight: '700', fontSize: '11px', cursor: 'pointer' }}>#{i.id}</td>
                         <td onClick={() => setSelectedInteraction(i)} style={{ padding: '10px 8px', color: '#1a1a1a', fontWeight: '600', cursor: 'pointer' }}>{i.employee_name || 'N/A'}</td>
-                        <td onClick={() => setSelectedInteraction(i)} style={{ padding: '10px 8px', textAlign: 'center', color: '#555', fontSize: '11px', cursor: 'pointer' }}>{i.time || '—'}</td>
-                        <td onClick={() => setSelectedInteraction(i)} style={{ padding: '10px 8px', textAlign: 'center', color: '#1a1a1a', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}>{i.status === 'insufficient_signals' ? '—' : fmtNum(i.presence_score)}<br />{statusBadge(i.status)}</td>
-                        <td onClick={() => setSelectedInteraction(i)} style={{ padding: '10px 8px', textAlign: 'center', color: '#555', fontSize: '11px', cursor: 'pointer' }}>{fmtPct(i.emotion)}</td>
-                        <td onClick={() => setSelectedInteraction(i)} style={{ padding: '10px 8px', textAlign: 'center', color: voiceColor(i.voice), fontWeight: '600', fontSize: '11px', cursor: 'pointer' }}>{fmtPct(i.voice)}</td>
-                        <td onClick={() => setSelectedInteraction(i)} style={{ padding: '10px 8px', textAlign: 'center', color: '#555', fontSize: '11px', cursor: 'pointer' }}>{fmtSec(i.response)}</td>
-                        <td onClick={() => setSelectedInteraction(i)} style={{ padding: '10px 8px', textAlign: 'center', color: '#555', fontSize: '11px', cursor: 'pointer' }}>{i.feedback ? `${i.feedback}★` : '—'}</td>
                         <td style={{ padding: '10px 8px', textAlign: 'center' }}>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              console.log('🔲 QR button clicked for interaction:', i.id)
-                              setQrInteraction(i.id)
-                            }}
-                            style={{
-                              background: '#0052cc',
-                              color: '#fff',
-                              border: 'none',
-                              padding: '4px 8px',
-                              borderRadius: '4px',
-                              cursor: 'pointer',
-                              fontSize: '11px',
-                              fontWeight: '600',
-                              transition: 'all 0.15s',
-                              opacity: 1,
-                              pointerEvents: 'auto'
-                            }}
-                            onMouseEnter={e => {
-                              e.currentTarget.style.background = '#003d99'
-                              e.currentTarget.style.transform = 'scale(1.05)'
-                            }}
-                            onMouseLeave={e => {
-                              e.currentTarget.style.background = '#0052cc'
-                              e.currentTarget.style.transform = 'scale(1)'
-                            }}
-                            title="Generate Feedback QR Code"
-                          >
-                            🔲 QR
-                          </button>
+                          {i.alert ? (<><span style={{ background: '#dc2626', color: '#fff', borderRadius: '4px', padding: '2px 8px', fontSize: '11px', fontWeight: '700' }}>Alert</span>{' '}<button onClick={(e) => { e.stopPropagation(); setNotesFor(i) }} style={{ background: '#fff', color: '#dc2626', border: '1px solid #dc2626', borderRadius: '4px', padding: '2px 8px', fontSize: '11px', cursor: 'pointer' }}>View</button></>) : i.processing_status === 'scored' ? <span style={{ background: '#dcfce7', color: '#15803d', borderRadius: '4px', padding: '2px 8px', fontSize: '11px', fontWeight: '700' }}>✓ All captured</span> : <span style={{ color: '#999', fontSize: '11px' }}>—</span>}
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="8" style={{ padding: '20px', textAlign: 'center', color: '#999', fontSize: '13px' }}>No interactions yet</td>
+                      <td colSpan="3" style={{ padding: '20px', textAlign: 'center', color: '#999', fontSize: '13px' }}>No interactions yet</td>
                     </tr>
                   )}
                 </tbody>
               </table>
+              {notesFor && (
+                <div onClick={() => setNotesFor(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 10002, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: '10px', padding: '20px', width: '460px', maxWidth: '90vw', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }}>
+                    <h3 style={{ margin: '0 0 6px', color: '#dc2626', fontSize: '16px' }}>Alert · Session #{notesFor.id}</h3>
+                    <p style={{ fontSize: '12px', color: '#666', margin: '0 0 12px' }}>{notesFor.employee_name} · {notesFor.start_timestamp}</p>
+                    <ul style={{ paddingLeft: '18px', margin: 0, fontSize: '13px', lineHeight: '1.6' }}>
+                      {(notesFor.notes || []).map((n, k) => <li key={k}>{n}</li>)}
+                    </ul>
+                    <div style={{ textAlign: 'right', marginTop: '16px' }}>
+                      <button onClick={() => setNotesFor(null)} style={{ padding: '6px 14px', border: '1px solid #0c2340', background: '#fff', color: '#0c2340', borderRadius: '6px', cursor: 'pointer' }}>Close</button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Score Components */}
-        <div className="card-hover" style={cardStyle}>
-          <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#0052cc', marginBottom: '18px', marginTop: 0 }}>📊 Score Components</h3>
-          {summary ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
-              {[
-                { 
-                  label: 'Presence', 
-                  value: clampOrNull(summary.presence_rate), 
-                  color: '#00a86b',
-                  desc: 'Face detection at counter'
-                },
-                { 
-                  label: 'Emotion', 
-                  value: clampOrNull(summary.emotion_score), 
-                  color: '#0052cc',
-                  desc: 'Expression (experimental)'
-                },
-                { 
-                  label: 'Response', 
-                  value: clampOrNull(summary.avg_response == null ? null : 100 - (summary.avg_response / 15) * 100), 
-                  color: '#ff9500',
-                  desc: 'Speed (≤15s = 100%)'
-                },
-                { 
-                  label: 'Feedback', 
-                  value: clampOrNull(summary.feedback == null ? null : (summary.feedback / 5) * 100), 
-                  color: '#9333ea',
-                  desc: 'Customer rating'
-                },
-                { 
-                  label: 'Voice', 
-                  value: clampOrNull(summary.voice_score), 
-                  color: '#e53935',
-                  desc: 'Speech presence (experimental)'
-                }
-              ].map(s => (
-                <div key={s.label}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '13px', color: '#333', fontWeight: '600' }}>{s.label}</span>
-                    <span style={{ fontSize: '13px', fontWeight: '700', color: s.color }}>{s.value == null ? '—' : `${Math.round(s.value)}%`}</span>
-                  </div>
-                  <div style={{ width: '100%', background: '#f0f0f0', borderRadius: '6px', height: '10px', overflow: 'hidden', marginBottom: '6px' }}>
-                    <div style={{ width: `${s.value ?? 0}%`, background: `linear-gradient(90deg, ${s.color}, ${s.color}dd)`, height: '10px', borderRadius: '6px', transition: 'width 0.5s ease-out' }} />
-                  </div>
-                  <p style={{ fontSize: '10px', color: '#999', margin: '0', fontWeight: '500' }}>{s.desc}</p>
+        {/* Find a customer */}
+        <div className="card-hover" style={{ ...cardStyle, marginTop: '12px' }}>
+          <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#0c2340', marginBottom: '14px', marginTop: 0 }}>🔎 Find a customer</h3>
+          <input
+            type="text"
+            value={customerQuery}
+            onChange={e => setCustomerQuery(e.target.value)}
+            placeholder="Customer name or phone number"
+            style={{ width: '100%', padding: '10px 12px', border: '1px solid #0c2340', borderRadius: '6px', fontSize: '13px', boxSizing: 'border-box', marginBottom: '12px' }}
+          />
+          <p style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>{customerQuery.trim() ? `${customerRows.length} match(es)` : 'Recent customers, newest first'}</p>
+          <div style={{ maxHeight: '320px', overflowY: 'auto', border: '1px solid #e8e8e8', borderRadius: '6px' }}>
+            {customerRows.length === 0 && (
+              <div style={{ padding: '16px', color: '#999', fontSize: '13px' }}>No matching customer</div>
+            )}
+            {customerRows.map(i => (
+              <div key={i.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', padding: '10px 12px', borderBottom: '1px solid #f0f0f0', fontSize: '13px' }}>
+                <div style={{ minWidth: 0 }}>
+                  <strong>{i.customer_name}</strong> · {i.customer_phone} · session #{i.id} · {i.employee_name} · {i.feedback ? `${i.feedback}★` : 'no rating'} · {i.processing_status}
+                  {i.comment && <div style={{ color: '#555', fontStyle: 'italic', marginTop: '4px' }}>"{i.comment}"</div>}
+                  <div style={{ color: '#b45309', fontSize: '12px', marginTop: '4px' }}>{(i.notes || []).join(' · ')}</div>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100px', color: '#999' }}>
-              Loading...
-            </div>
-          )}
+                <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                  <button onClick={() => setDetailEmployee(i.employee_id)} style={btnStyle(false)}>Detail analysis</button>
+                  {processButton(i)}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
+
       </div>
 
       {/* Modals */}
@@ -449,6 +502,63 @@ export default function Dashboard() {
           }} />
         </>
       )}
+      {detailEmployee && createPortal(
+        <div onClick={() => setDetailEmployee(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: '10px', padding: '24px', width: 'min(1200px, 100%)', boxSizing: 'border-box', margin: 'auto', maxHeight: '85vh', overflowY: 'auto', boxShadow: '0 10px 40px rgba(0,0,0,0.25)' }}>
+            {(() => {
+              const rows = interactions.filter(i => i.employee_id === detailEmployee)
+              const name = rows[0]?.employee_name || 'Employee'
+              const rated = rows.filter(r => r.feedback)
+              const avgRating = rated.length ? (rated.reduce((sum, r) => sum + r.feedback, 0) / rated.length).toFixed(1) : '—'
+              const th = { textAlign: 'left', padding: '8px', fontSize: '12px', color: '#0c2340', borderBottom: '2px solid #0c2340', whiteSpace: 'nowrap' }
+              const td = { padding: '8px', fontSize: '12px', color: '#333', borderBottom: '1px solid #eee', verticalAlign: 'top' }
+              return (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', gap: '12px' }}>
+                    <div>
+                      <h3 style={{ margin: 0, color: '#0c2340', fontSize: '20px' }}>{name}</h3>
+                      <div style={{ fontSize: '13px', color: '#555', marginTop: '4px' }}>{rows.length} session(s) · avg rating {avgRating}★</div>
+                    </div>
+                    <button onClick={() => setDetailEmployee(null)} style={btnStyle(false)}>Close</button>
+                  </div>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', minWidth: '1200px', borderCollapse: 'collapse' }}>
+                      <thead>
+                        <tr>
+                          {['Session', 'Date & time', 'Employee', 'Status', 'Rating', 'Comment', 'Presence', 'Expression', 'Voice', 'Unified', 'Response', 'Missing', 'Action'].map(h => (
+                            <th key={h} style={th}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rows.map(r => (
+                          <tr key={r.id}>
+                            <td style={td}>#{r.id}</td>
+                            <td style={{ ...td, whiteSpace: 'nowrap' }}>{r.start_timestamp ? new Date(r.start_timestamp).toLocaleString() : '—'}</td>
+                            <td style={td}>{r.employee_name || '—'}</td>
+                            <td style={td}>{r.processing_status || '—'}</td>
+                            <td style={td}>{r.feedback ? `${r.feedback}★` : '—'}</td>
+                            <td style={{ ...td, maxWidth: '200px' }}>{r.comment ? `"${r.comment}"` : '—'}</td>
+                            <td style={td}>{fmtScore(r.presence_score)}</td>
+                            <td style={td}>{fmtScore(r.emotion_score)}</td>
+                            <td onClick={() => r.voice_score != null && setSelectedInteraction({ ...r, openTranscript: true })} style={{ ...td, cursor: r.voice_score != null ? 'pointer' : 'default', color: r.voice_score != null ? '#0c2340' : '#333', textDecoration: r.voice_score != null ? 'underline' : 'none', fontWeight: r.voice_score != null ? '700' : '400' }}>{fmtScore(r.voice_score)}</td>
+                            <td style={td}><span onClick={() => r.unified_score != null && setBreakdownId(r.id)} style={{ cursor: r.unified_score != null ? 'pointer' : 'default', color: '#0c2340', fontWeight: '700', textDecoration: r.unified_score != null ? 'underline' : 'none' }}>{fmtScore(r.unified_score)}</span></td>
+                            <td style={td}>{r.response_seconds != null ? `${r.response_seconds}s` : '—'}</td>
+                            <td style={td}>{['presence', 'emotion', 'response', 'feedback', 'voice'].filter(k => !(r.signals_used || []).includes(k)).join(', ') || '—'}</td>
+                            <td style={td}>{processButton(r, true)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )
+            })()}
+          </div>
+        </div>,
+        document.body
+      )}
+      {breakdownId && <ScoreBreakdownModal interactionId={breakdownId} onClose={() => setBreakdownId(null)} />}
       {selectedInteraction && <InteractionModal interaction={selectedInteraction} onClose={() => setSelectedInteraction(null)} />}
     </div>
   )

@@ -127,6 +127,7 @@ class Interaction(Base):
     start_timestamp = Column(DateTime, nullable=False)
     end_timestamp = Column(DateTime, nullable=True)
     video_file_path = Column(String(255), nullable=True)
+    video_duration_seconds = Column(Float, nullable=True)  # real clip length, measured on save
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relationships
@@ -151,7 +152,11 @@ class BehavioralScore(Base):
     unified_score = Column(Float, nullable=True)  # Weighted average
     interaction_id = Column(Integer, nullable=True, unique=True)
     signals_used = Column(String(200), nullable=True)
+    transcript = Column(Text, nullable=True)  # Whisper output, informational, not fused
+    transcript_language = Column(String(10), nullable=True)
+    model_version = Column(String(80), nullable=True)
     score_status = Column(String(30), nullable=True)
+    score_breakdown = Column(Text, nullable=True)
     error_details = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     
@@ -193,6 +198,9 @@ class ResponseTimeRecord(Base):
     # Relationships
     interaction = relationship('Interaction', back_populates='response_time_record')
 
+from sqlalchemy import String as SAString
+
+
 class CustomerFeedback(Base):
     __tablename__ = 'customer_feedback'
     
@@ -200,6 +208,8 @@ class CustomerFeedback(Base):
     interaction_id = Column(Integer, ForeignKey('interactions.id'), nullable=False)
     star_rating = Column(Integer, default=3)  # 1-5
     comments = Column(Text, nullable=True)
+    customer_name = Column(SAString(100), nullable=True)
+    customer_phone = Column(SAString(20), nullable=True)
     
     # Relationships
     interaction = relationship('Interaction', back_populates='customer_feedback')
@@ -239,6 +249,7 @@ class Alert(Base):
     is_resolved = Column(Boolean, default=False)
     triggered_at = Column(DateTime, default=datetime.utcnow)
     resolved_at = Column(DateTime, nullable=True)
+    session_id = Column(Integer, nullable=True)  # interaction that triggered the alert
     
     # Relationships
     employee = relationship('Employee', back_populates='alerts')
@@ -251,3 +262,10 @@ class ActivityLog(Base):
     action = Column(String(255), nullable=False)
     details = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+class SensorPresenceEvent(Base):
+    __tablename__ = 'sensor_presence_events'
+
+    id = Column(Integer, primary_key=True)
+    is_present = Column(Boolean, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

@@ -9,6 +9,8 @@ export default function CustomerFeedback() {
   const [rating, setRating] = useState(0)
   const [hoverRating, setHoverRating] = useState(0)
   const [comment, setComment] = useState('')
+  const [name, setName] = useState('')
+  const [phone, setPhone] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
@@ -24,7 +26,7 @@ export default function CustomerFeedback() {
       })
       .catch(err => {
         console.error('Failed to fetch interaction:', err)
-        setError('Could not load interaction details')
+        // Employee name is optional; the feedback form works without it
       })
       .finally(() => setLoading(false))
   }, [interactionId])
@@ -32,6 +34,10 @@ export default function CustomerFeedback() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     
+    if (name.trim().length < 2 || phone.replace(/\D/g, '').length < 7) {
+      setError('Please enter your name and phone number')
+      return
+    }
     if (!rating) {
       setError('Please select a star rating')
       return
@@ -45,6 +51,8 @@ export default function CustomerFeedback() {
         interaction_id: interactionId,
         rating: rating,
         comment: comment || null,
+        customer_name: name.trim(),
+        customer_phone: phone,
         created_at: new Date().toISOString()
       })
 
@@ -96,7 +104,7 @@ export default function CustomerFeedback() {
       <div style={{ maxWidth: '600px', margin: '0 auto' }}>
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#0052cc', margin: '0 0 8px 0' }}>Your Feedback Matters</h1>
+          <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#0c2340', margin: '0 0 8px 0' }}>Your Feedback Matters</h1>
           <p style={{ fontSize: '14px', color: '#666', margin: 0 }}>Help us improve by sharing your experience</p>
         </div>
 
@@ -112,10 +120,10 @@ export default function CustomerFeedback() {
           <div style={cardStyle}>
             {/* Interaction Info */}
             {interaction && (
-              <div style={{ background: '#e8f0ff', border: '1px solid #0052cc', borderRadius: '8px', padding: '14px', marginBottom: '20px' }}>
+              <div style={{ background: '#e8f1f5', border: '1px solid #0c2340', borderRadius: '8px', padding: '14px', marginBottom: '20px' }}>
                 <p style={{ fontSize: '12px', color: '#666', margin: '0 0 4px 0' }}>Employee</p>
-                <p style={{ fontSize: '14px', fontWeight: '700', color: '#0052cc', margin: 0 }}>
-                  {interaction.employee_name || 'Service Representative'}
+                <p style={{ fontSize: '14px', fontWeight: '700', color: '#0c2340', margin: 0 }}>
+                  {interaction?.employee_name || 'Service Representative'}
                 </p>
               </div>
             )}
@@ -127,6 +135,14 @@ export default function CustomerFeedback() {
                   ⚠️ {error}
                 </div>
               )}
+
+              {/* Name and phone */}
+              <div>
+                <label style={{ fontSize: '14px', fontWeight: '700', color: '#333', display: 'block', marginBottom: '8px' }}>Your name</label>
+                <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Full name" style={{ width: '100%', padding: '12px', border: '1px solid #e0e0e0', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box', marginBottom: '12px' }} />
+                <label style={{ fontSize: '14px', fontWeight: '700', color: '#333', display: 'block', marginBottom: '8px' }}>Phone number</label>
+                <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="03XX XXXXXXX" style={{ width: '100%', padding: '12px', border: '1px solid #e0e0e0', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }} />
+              </div>
 
               {/* Star Rating */}
               <div>
@@ -157,7 +173,7 @@ export default function CustomerFeedback() {
                     </button>
                   ))}
                 </div>
-                <p style={{ fontSize: '12px', color: '#0052cc', fontWeight: '600', textAlign: 'center', margin: '12px 0 0 0' }}>
+                <p style={{ fontSize: '12px', color: '#0c2340', fontWeight: '600', textAlign: 'center', margin: '12px 0 0 0' }}>
                   {rating === 0 ? 'Click to rate' : `You rated ${rating} star${rating !== 1 ? 's' : ''}`}
                 </p>
               </div>
@@ -184,7 +200,7 @@ export default function CustomerFeedback() {
                     transition: 'all 0.15s',
                     color: '#1a1a1a'
                   }}
-                  onFocus={e => (e.target.style.borderColor = '#0052cc', e.target.style.boxShadow = '0 0 0 3px rgba(0,82,204,0.1)')}
+                  onFocus={e => (e.target.style.borderColor = '#0c2340', e.target.style.boxShadow = '0 0 0 3px rgba(12,35,64,0.1)')}
                   onBlur={e => (e.target.style.borderColor = '#e0e0e0', e.target.style.boxShadow = 'none')}
                 />
                 <p style={{ fontSize: '11px', color: '#999', margin: '6px 0 0 0' }}>
@@ -225,7 +241,7 @@ export default function CustomerFeedback() {
 
               {/* Info Text */}
               <p style={{ fontSize: '12px', color: '#999', textAlign: 'center', margin: '12px 0 0 0' }}>
-                Your feedback is anonymous and helps us improve our service quality.
+                Your name and phone let us link this feedback to your visit and follow up on concerns.
               </p>
             </form>
           </div>

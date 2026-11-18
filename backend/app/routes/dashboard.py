@@ -1,9 +1,11 @@
 import json
+import re
 from flask import Blueprint, jsonify, request, current_app
 from flask_jwt_extended import jwt_required
 from datetime import datetime, timedelta
 from sqlalchemy import or_
 from app.models import BehavioralScore, Interaction, ResponseTimeRecord, Employee
+from app.config.constants import RED_FLAG_WORDS
 
 dashboard_bp = Blueprint('dashboard', __name__)
 
@@ -12,6 +14,17 @@ def _avg(values):
     """Average over real values only. Returns None (not 0) if nothing was measured."""
     vals = [v for v in values if v is not None]
     return round(sum(vals) / len(vals), 2) if vals else None
+
+
+def _find_red_flags(transcript):
+    """Red-flag words found in a transcript (lowercase, unique, in order)."""
+    if not transcript:
+        return []
+    found = []
+    for tok in re.findall(r"[\w']+", transcript.lower()):
+        if tok in RED_FLAG_WORDS and tok not in found:
+            found.append(tok)
+    return found
 
 
 def _period_start(period):
@@ -81,9 +94,9 @@ def dashboard_summary():
             'avg_presence': _avg([s.presence_score for s in scores]),
             'avg_emotion': _avg([s.emotion_score for s in scores]),
             'avg_voice': _avg([s.voice_score for s in scores]),
-            # Response and feedback are not fused yet (see Phase 9 / Phase 8)
-            'avg_response': None,
-            'avg_feedback': None,
+            # Response is a raw average; not yet fused into the unified score
+            'avg_response': _avg_response(session, start, employee_id),
+            'avg_feedback': _avg_feedback(session, start, employee_id),
         }), 200
     except Exception as e:
         return jsonify({'error': 'summary unavailable', 'detail': str(e)}), 500
@@ -112,6 +125,7 @@ def _missing_reasons(score):
 @jwt_required()
 def dashboard_interactions():
     session = current_app.SessionLocal()
+    from app.models import CustomerFeedback
     try:
         period = request.args.get('period', 'week')
         employee_id = _scoped_employee_id()
@@ -122,7 +136,9 @@ def dashboard_interactions():
             query = query.filter(Interaction.start_timestamp >= start)
         if employee_id:
             query = query.filter(Interaction.employee_id == employee_id)
-        interactions = query.order_by(Interaction.start_timestamp.desc()).limit(200).all()
+        limit = max(1, min(request.args.get('limit', 200, type=int) or 200, 1000))
+        offset = max(0, request.args.get('offset', 0, type=int) or 0)
+        interactions = query.order_by(Interaction.start_timestamp.desc()).offset(offset).limit(limit).all()
 
         rows = []
         for it in interactions:
@@ -141,11 +157,35 @@ def dashboard_interactions():
                 'presence_score': score.presence_score if score else None,
                 'emotion_score': score.emotion_score if score else None,
                 'voice_score': score.voice_score if score else None,
+                'transcript': score.transcript if score else None,
+                'transcript_language': score.transcript_language if score else None,
+                'red_flags': _find_red_flags(score.transcript) if score else [],
                 'signals_used': score.signals_used.split(',') if score and score.signals_used else [],
                 'missing_reasons': _missing_reasons(score),
                 'response_seconds': rt.response_seconds if rt else None,
+                'video_duration_seconds': it.video_duration_seconds,
                 'response_status': rt.status if rt else 'missing_event',
+                'feedback': session.query(CustomerFeedback.star_rating).filter(CustomerFeedback.interaction_id == it.id).scalar(),
+                'comment': session.query(CustomerFeedback.comments).filter(CustomerFeedback.interaction_id == it.id).scalar(),
+                'customer_name': session.query(CustomerFeedback.customer_name).filter(CustomerFeedback.interaction_id == it.id).scalar(),
+                'customer_phone': session.query(CustomerFeedback.customer_phone).filter(CustomerFeedback.interaction_id == it.id).scalar(),
             })
+        from app.services.interaction_notes import build_notes
+        from app.services.note_wording import get_cached, queue_missing
+        plain_by_row = [build_notes({
+            'status': row['processing_status'],
+            'presence_score': row['presence_score'],
+            'emotion': row['emotion_score'],
+            'voice': row['voice_score'],
+            'response': row['response_seconds'],
+            'feedback': row['feedback'],
+        }) for row in rows]
+        all_notes = list({n for plain in plain_by_row for n in plain})
+        queue_missing(all_notes)
+        wording = get_cached(all_notes)
+        for row, plain in zip(rows, plain_by_row):
+            row['notes'] = [wording.get(n, n) for n in plain]
+            row['alert'] = bool(plain) and row.get('processing_status') != 'in_progress' and not (len(plain) == 1 and plain[0] == 'All signals were captured.')
         return jsonify(rows), 200
     except Exception as e:
         return jsonify({'error': 'interactions unavailable', 'detail': str(e)}), 500
@@ -235,3 +275,26 @@ def dashboard_performers():
         return jsonify({'error': 'performers unavailable', 'detail': str(e)}), 500
     finally:
         session.close()
+
+
+def _avg_response(session, start, employee_id):
+    q = session.query(ResponseTimeRecord.response_seconds).join(
+        Interaction, ResponseTimeRecord.interaction_id == Interaction.id)
+    if start:
+        q = q.filter(Interaction.start_timestamp >= start)
+    if employee_id:
+        q = q.filter(Interaction.employee_id == employee_id)
+    vals = [r[0] for r in q.all() if r[0] is not None]
+    return round(sum(vals) / len(vals), 2) if vals else None
+
+
+def _avg_feedback(session, start, employee_id):
+    from app.models import CustomerFeedback
+    q = session.query(CustomerFeedback.star_rating).join(
+        Interaction, CustomerFeedback.interaction_id == Interaction.id)
+    if start:
+        q = q.filter(Interaction.start_timestamp >= start)
+    if employee_id:
+        q = q.filter(Interaction.employee_id == employee_id)
+    vals = [r[0] for r in q.all() if r[0] is not None]
+    return round(sum(vals) / len(vals), 1) if vals else None

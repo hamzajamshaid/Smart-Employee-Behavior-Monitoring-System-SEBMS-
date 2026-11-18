@@ -21,10 +21,10 @@ export default function EmployeeLogin() {
         password
       })
 
-      localStorage.setItem('token', res.data.token)
-      localStorage.setItem('role', res.data.role)
-      localStorage.setItem('employee_id', res.data.employee_id)
-      localStorage.setItem('name', res.data.name)
+      sessionStorage.setItem('token', res.data.token)
+      sessionStorage.setItem('role', res.data.role)
+      sessionStorage.setItem('employee_id', res.data.employee_id)
+      sessionStorage.setItem('name', res.data.name)
 
       navigate('/employee-dashboard')
     } catch (err) {

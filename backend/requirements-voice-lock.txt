@@ -14,3 +14,6 @@ soundfile==0.14.0
 sympy==1.14.0
 torch==2.14.1
 typing_extensions==4.16.0
+
+faster-whisper==1.2.1
+transformers==5.22.2

@@ -62,6 +62,7 @@ def create_app():
         from app.routes.alerts import alerts_bp
         from app.routes.tickets import tickets_bp
         from app.routes.appointments import appointments_bp
+        from app.routes.meetings import meetings_bp
         from app.routes.attendance import attendance_bp
         from app.routes.interactions import interactions_bp
         from app.routes.batch import batch_bp
@@ -73,10 +74,23 @@ def create_app():
         app.register_blueprint(alerts_bp, url_prefix='/api')
         app.register_blueprint(tickets_bp, url_prefix='/api')
         app.register_blueprint(appointments_bp, url_prefix='/api')
+        app.register_blueprint(meetings_bp, url_prefix='/api')
         app.register_blueprint(attendance_bp, url_prefix='/api')
         app.register_blueprint(interactions_bp, url_prefix='/api')
         app.register_blueprint(batch_bp, url_prefix='/api')
         app.register_blueprint(simulate_bp, url_prefix='/api')
+        from app.routes.sensor import sensor_bp
+        app.register_blueprint(sensor_bp, url_prefix='/api')
+        from app.routes.counter import counter_bp
+        app.register_blueprint(counter_bp, url_prefix='/api')
+        from app.routes.feedback import feedback_api_bp
+        app.register_blueprint(feedback_api_bp, url_prefix='/api')
+        from app.routes.settings import settings_bp
+        from app.routes.score_breakdown import score_breakdown_bp
+        app.register_blueprint(settings_bp, url_prefix='/api')
+        app.register_blueprint(score_breakdown_bp, url_prefix='/api')
+        from app.routes.reports import reports_bp
+        app.register_blueprint(reports_bp, url_prefix='/api')
         
         logger.info("✅ All routes registered")
     except ImportError as e:

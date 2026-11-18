@@ -6,7 +6,7 @@ import API_BASE from '../config';
 
 export default function Settings() {
   const navigate = useNavigate();
-  const token = localStorage.getItem('token');
+  const token = sessionStorage.getItem('token');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const headers = { Authorization: `Bearer ${token}` };
@@ -28,6 +28,7 @@ export default function Settings() {
       feedbackMinimum: 3.5
     },
     alertSensitivity: 'medium',
+    retentionDays: 0,
     batchProcessingInterval: 24
   });
 
@@ -80,6 +81,23 @@ export default function Settings() {
     }));
   };
 
+  const [deleteDate, setDeleteDate] = useState('');
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeleteVideos = async () => {
+    if (!deleteDate) { alert('Pick a date first'); return; }
+    if (!window.confirm(`Delete all recorded videos from ${deleteDate}? Scores are kept.`)) return;
+    try {
+      setDeleting(true);
+      const res = await axios.post(`${API_BASE}/api/settings/delete-videos`, { date: deleteDate }, { headers });
+      alert(`Deleted ${res.data.files_removed} files from ${res.data.interactions_cleared} interactions.`);
+    } catch (err) {
+      alert('Error: ' + (err.response?.data?.error || 'Failed to delete videos'));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const totalWeight = Object.values(settings.scoringWeights).reduce((a, b) => a + b, 0);
   const isWeightValid = totalWeight === 100;
 
@@ -92,9 +110,9 @@ export default function Settings() {
   return (
     <div style={{ minHeight: '100vh', background: '#f5f8fc' }}>
       {/* Sticky Header */}
-      <div style={{ position: 'sticky', top: 0, background: '#e8f0ff', borderBottom: '2px solid #0052cc', padding: '16px 30px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', zIndex: 50 }}>
+      <div style={{ position: 'sticky', top: 0, background: '#e8f1f5', borderTop: '1px solid #0c2340', borderBottom: '1px solid #0c2340', padding: '0 30px', height: '121px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', zIndex: 50 }}>
         <div>
-          <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#0052cc', margin: 0, lineHeight: '1.1' }}>⚙️ Settings</h1>
+          <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#0c2340', margin: 0, lineHeight: '1.1' }}><img src="/icons/nav/settings-dark.png" alt="" style={{ width: '30px', height: '30px', verticalAlign: 'middle', marginRight: '10px' }} />Settings</h1>
           <p style={{ fontSize: '13px', color: '#666', margin: '4px 0 0 0' }}>System configuration and scoring parameters</p>
         </div>
       </div>
@@ -103,7 +121,7 @@ export default function Settings() {
       <div style={{ padding: '24px 30px' }}>
         {/* General Settings */}
         <div style={cardStyle}>
-          <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#0052cc', marginBottom: '20px', marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#0c2340', marginBottom: '20px', marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
             <SettingsIcon size={20} />
             General Settings
           </h3>
@@ -115,7 +133,7 @@ export default function Settings() {
                 value={settings.companyName}
                 onChange={e => setSettings({ ...settings, companyName: e.target.value })}
                 style={inputStyle}
-                onFocus={e => e.currentTarget.style.borderColor = '#0052cc'}
+                onFocus={e => e.currentTarget.style.borderColor = '#0c2340'}
                 onBlur={e => e.currentTarget.style.borderColor = '#e8e8e8'}
               />
             </div>
@@ -125,7 +143,7 @@ export default function Settings() {
                 value={settings.timezone}
                 onChange={e => setSettings({ ...settings, timezone: e.target.value })}
                 style={{ ...inputStyle, cursor: 'pointer' }}
-                onFocus={e => e.currentTarget.style.borderColor = '#0052cc'}
+                onFocus={e => e.currentTarget.style.borderColor = '#0c2340'}
                 onBlur={e => e.currentTarget.style.borderColor = '#e8e8e8'}
               >
                 <option value="UTC+5">UTC+5 (Pakistan)</option>
@@ -144,7 +162,7 @@ export default function Settings() {
                 min="1"
                 max="168"
                 style={inputStyle}
-                onFocus={e => e.currentTarget.style.borderColor = '#0052cc'}
+                onFocus={e => e.currentTarget.style.borderColor = '#0c2340'}
                 onBlur={e => e.currentTarget.style.borderColor = '#e8e8e8'}
               />
               <p style={{ fontSize: '11px', color: '#999', margin: '4px 0 0 0' }}>Data processed every {settings.batchProcessingInterval} hours</p>
@@ -154,7 +172,7 @@ export default function Settings() {
 
         {/* Scoring Weights */}
         <div style={{ ...cardStyle, marginTop: '24px' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#0052cc', marginBottom: '20px', marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#0c2340', marginBottom: '20px', marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Sliders size={20} />
             Scoring Weights Configuration
           </h3>
@@ -166,12 +184,12 @@ export default function Settings() {
               { key: 'faceEmotion', label: 'Face Emotion Score', description: 'Facial expression analysis (happiness, stress)' },
               { key: 'responseTime', label: 'Response Time Score', description: 'Time taken to respond to customer' },
               { key: 'customerFeedback', label: 'Customer Feedback Score', description: 'Direct customer ratings (1-5 stars)' },
-              { key: 'voiceEmotion', label: 'Voice Emotion Score', description: 'Vocal tone and emotional delivery (optional)' }
+              { key: 'voiceEmotion', label: 'Voice Transcript Sentiment', description: 'Sentiment of the transcribed speech (optional)' }
             ].map(item => (
               <div key={item.key} style={{ background: '#f9fafb', borderRadius: '8px', padding: '16px', border: '1px solid #e8e8e8' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                   <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: '13px', fontWeight: '700', color: '#0052cc', margin: 0 }}>{item.label}</p>
+                    <p style={{ fontSize: '13px', fontWeight: '700', color: '#0c2340', margin: 0 }}>{item.label}</p>
                     <p style={{ fontSize: '11px', color: '#999', margin: '2px 0 0 0' }}>{item.description}</p>
                   </div>
                 </div>
@@ -181,7 +199,7 @@ export default function Settings() {
                   max="100"
                   value={settings.scoringWeights[item.key]}
                   onChange={e => updateScoringWeight(item.key, e.target.value)}
-                  style={{ width: '100%', height: '6px', borderRadius: '3px', background: '#e8e8e8', outline: 'none', cursor: 'pointer', accentColor: '#0052cc' }}
+                  style={{ width: '100%', height: '6px', borderRadius: '3px', background: '#e8e8e8', outline: 'none', cursor: 'pointer', accentColor: '#0c2340' }}
                 />
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
                   <span style={{ fontSize: '11px', color: '#666', fontWeight: '600' }}>Weight</span>
@@ -191,9 +209,9 @@ export default function Settings() {
                     max="100"
                     value={settings.scoringWeights[item.key]}
                     onChange={e => updateScoringWeight(item.key, e.target.value)}
-                    style={{ width: '60px', padding: '6px 8px', border: '1px solid #e8e8e8', borderRadius: '4px', fontSize: '12px', fontWeight: '700', color: '#0052cc', textAlign: 'center' }}
+                    style={{ width: '60px', padding: '6px 8px', border: '1px solid #e8e8e8', borderRadius: '4px', fontSize: '12px', fontWeight: '700', color: '#0c2340', textAlign: 'center' }}
                   />
-                  <span style={{ fontSize: '12px', fontWeight: '700', color: '#0052cc' }}>%</span>
+                  <span style={{ fontSize: '12px', fontWeight: '700', color: '#0c2340' }}>%</span>
                 </div>
               </div>
             ))}
@@ -208,7 +226,7 @@ export default function Settings() {
 
         {/* Detection Thresholds */}
         <div style={{ ...cardStyle, marginTop: '24px' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#0052cc', marginBottom: '20px', marginTop: 0 }}>Detection Thresholds</h3>
+          <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#0c2340', marginBottom: '20px', marginTop: 0 }}>Detection Thresholds</h3>
           <p style={{ fontSize: '12px', color: '#666', marginBottom: '16px' }}>Set minimum performance targets and detection limits</p>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '20px' }}>
@@ -229,9 +247,9 @@ export default function Settings() {
                     step="0.1"
                     value={settings.detectionThresholds[item.key]}
                     onChange={e => updateThreshold(item.key, e.target.value)}
-                    style={{ flex: 1, padding: '10px 12px', border: '1px solid #e8e8e8', borderRadius: '6px', fontSize: '13px', fontWeight: '700', color: '#0052cc' }}
+                    style={{ flex: 1, padding: '10px 12px', border: '1px solid #e8e8e8', borderRadius: '6px', fontSize: '13px', fontWeight: '700', color: '#0c2340' }}
                   />
-                  <span style={{ fontSize: '12px', fontWeight: '700', color: '#0052cc', minWidth: '20px' }}>{item.suffix}</span>
+                  <span style={{ fontSize: '12px', fontWeight: '700', color: '#0c2340', minWidth: '20px' }}>{item.suffix}</span>
                 </div>
               </div>
             ))}
@@ -240,14 +258,14 @@ export default function Settings() {
 
         {/* Alert Sensitivity */}
         <div style={{ ...cardStyle, marginTop: '24px' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#0052cc', marginBottom: '20px', marginTop: 0 }}>Alert Sensitivity</h3>
+          <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#0c2340', marginBottom: '20px', marginTop: 0 }}>Alert Sensitivity</h3>
           <p style={{ fontSize: '12px', color: '#666', marginBottom: '16px' }}>Configure how aggressively the system triggers alerts</p>
 
           <div style={{ display: 'flex', gap: '12px' }}>
             {[
-              { value: 'low', label: 'Low', desc: 'Only critical alerts' },
-              { value: 'medium', label: 'Medium', desc: 'Standard alerts' },
-              { value: 'high', label: 'High', desc: 'Detailed alerts' }
+              { value: 'low', label: 'Low', desc: 'Alert below 50' },
+              { value: 'medium', label: 'Medium', desc: 'Alert below 60' },
+              { value: 'high', label: 'High', desc: 'Alert below 75' }
             ].map(level => (
               <button
                 key={level.value}
@@ -255,30 +273,62 @@ export default function Settings() {
                 style={{
                   flex: 1,
                   padding: '16px',
-                  border: `2px solid ${settings.alertSensitivity === level.value ? '#0052cc' : '#e8e8e8'}`,
-                  background: settings.alertSensitivity === level.value ? '#e8f0ff' : '#fff',
+                  border: `2px solid ${settings.alertSensitivity === level.value ? '#0c2340' : '#e8e8e8'}`,
+                  background: settings.alertSensitivity === level.value ? '#e8f1f5' : '#fff',
                   borderRadius: '8px',
                   cursor: 'pointer',
                   transition: 'all 0.15s',
                   textAlign: 'center'
                 }}
-                onMouseEnter={e => settings.alertSensitivity !== level.value && (e.currentTarget.style.borderColor = '#0052cc', e.currentTarget.style.background = '#f9fafb')}
+                onMouseEnter={e => settings.alertSensitivity !== level.value && (e.currentTarget.style.borderColor = '#0c2340', e.currentTarget.style.background = '#f9fafb')}
                 onMouseLeave={e => settings.alertSensitivity !== level.value && (e.currentTarget.style.borderColor = '#e8e8e8', e.currentTarget.style.background = '#fff')}
               >
-                <p style={{ fontSize: '14px', fontWeight: '700', color: '#0052cc', margin: 0 }}>{level.label}</p>
+                <p style={{ fontSize: '14px', fontWeight: '700', color: '#0c2340', margin: 0 }}>{level.label}</p>
                 <p style={{ fontSize: '11px', color: '#999', margin: '4px 0 0 0' }}>{level.desc}</p>
               </button>
             ))}
           </div>
         </div>
 
+        {/* Video Retention */}
+        <div style={{ ...cardStyle, marginTop: '24px' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#0c2340', marginBottom: '20px', marginTop: 0 }}>Video Retention</h3>
+          <p style={{ fontSize: '12px', color: '#666', marginBottom: '16px' }}>Raw recordings are deleted automatically after this many days. Scores are always kept. 0 = keep forever.</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+            <div>
+              <label style={labelStyle}>Keep recordings for (days)</label>
+              <input
+                type="number"
+                min="0"
+                max="3650"
+                value={settings.retentionDays}
+                onChange={e => setSettings({ ...settings, retentionDays: Math.max(0, parseInt(e.target.value) || 0) })}
+                style={inputStyle}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Delete recordings from a date</label>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input type="date" value={deleteDate} onChange={e => setDeleteDate(e.target.value)} style={{ ...inputStyle, flex: 1 }} />
+                <button
+                  onClick={handleDeleteVideos}
+                  disabled={!deleteDate || deleting}
+                  style={{ padding: '10px 16px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', cursor: deleteDate && !deleting ? 'pointer' : 'not-allowed', fontWeight: '600', fontSize: '13px' }}
+                >
+                  {deleting ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* System Information */}
-        <div style={{ ...cardStyle, marginTop: '24px', background: '#e8f0ff', borderColor: '#d0e0ff' }}>
-          <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#0052cc', marginBottom: '12px', marginTop: 0 }}>System Information</h3>
+        <div style={{ ...cardStyle, marginTop: '24px', background: '#e8f1f5', borderColor: '#cfe0ea' }}>
+          <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#0c2340', marginBottom: '12px', marginTop: 0 }}>System Information</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '13px' }}>
             <div>
               <p style={{ color: '#666', fontWeight: '600', margin: '0 0 4px 0' }}>API Base URL</p>
-              <p style={{ color: '#0052cc', fontWeight: '700', margin: 0, wordBreak: 'break-all', fontSize: '12px' }}>{API_BASE}</p>
+              <p style={{ color: '#0c2340', fontWeight: '700', margin: 0, wordBreak: 'break-all', fontSize: '12px' }}>{API_BASE}</p>
             </div>
             <div>
               <p style={{ color: '#666', fontWeight: '600', margin: '0 0 4px 0' }}>Environment</p>

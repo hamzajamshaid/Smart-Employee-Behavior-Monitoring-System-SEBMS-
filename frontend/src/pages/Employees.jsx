@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import API_BASE from '../config'
+import CredentialsModal from '../components/CredentialsModal'
+import CredentialsFormModal from '../components/CredentialsFormModal'
 
 export default function Employees() {
   const navigate = useNavigate()
@@ -12,6 +14,23 @@ export default function Employees() {
   const [showEditModal, setShowEditModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [selectedEmployee, setSelectedEmployee] = useState(null)
+  const [credentials, setCredentials] = useState(null)
+  const [newPassword, setNewPassword] = useState('')
+  const [credentialsEdit, setCredentialsEdit] = useState(null)
+
+  const handleResetLogin = async (emp) => {
+    const typed = window.prompt(`New password for ${emp.name} (at least 6 characters).\nLeave blank to auto-generate one.`, '')
+    if (typed === null) return
+    if (typed.trim() && typed.trim().length < 6) { alert('❌ Password must be at least 6 characters'); return }
+    const body = typed.trim() ? { password: typed.trim() } : {}
+    try {
+      const headers = { 'Authorization': `Bearer ${token}` }
+      const res = await axios.put(`${API_BASE}/api/employees/${emp.id}/reset-password`, body, { headers })
+      setCredentials({ title: 'Login reset', name: emp.name, code: emp.employee_code, password: res.data.new_password })
+    } catch (err) {
+      alert('❌ Error: ' + (err.response?.data?.error || 'Failed'))
+    }
+  }
   const [loading, setLoading] = useState(true)
   const [formErrors, setFormErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
@@ -21,7 +40,7 @@ export default function Employees() {
     email: '',
     phone: '',
   })
-  const token = localStorage.getItem('token')
+  const token = sessionStorage.getItem('token')
 
   useEffect(() => {
     if (!token) navigate('/login')
@@ -44,6 +63,7 @@ export default function Employees() {
     const errors = {}
     if (!formData.name.trim()) errors.name = 'Name required'
     if (!formData.counter_id) errors.counter_id = 'Counter ID required'
+    if (!showEditModal && newPassword.trim() && newPassword.trim().length < 6) errors.password = 'At least 6 characters'
     if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       errors.email = 'Invalid email'
     }
@@ -57,8 +77,8 @@ export default function Employees() {
     try {
       setSubmitting(true)
       const headers = { 'Authorization': `Bearer ${token}` }
-      const res = await axios.post(`${API_BASE}/api/employees`, formData, { headers })
-      alert(`✅ Employee added!\nCode: ${res.data.employee_code}\nPassword: ${res.data.password}`)
+      const res = await axios.post(`${API_BASE}/api/employees`, { ...formData, password: newPassword.trim() }, { headers })
+      setCredentials({ title: 'Employee added', name: res.data.name, code: res.data.employee_code, password: res.data.password })
       setShowAddForm(false)
       setFormData({ name: '', counter_id: '', email: '', phone: '' })
       fetchEmployees()
@@ -75,7 +95,7 @@ export default function Employees() {
     try {
       setSubmitting(true)
       const headers = { 'Authorization': `Bearer ${token}` }
-      await axios.patch(`${API_BASE}/api/employees/${selectedEmployee.id}`, formData, { headers })
+      await axios.put(`${API_BASE}/api/employees/${selectedEmployee.id}`, formData, { headers })
       alert('✅ Updated')
       setShowEditModal(false)
       setSelectedEmployee(null)
@@ -125,12 +145,12 @@ export default function Employees() {
   return (
     <div className="px-3 py-3">
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px', paddingBottom: '24px', borderBottom: '2px solid var(--neutral-200)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '-24px -24px 24px', padding: '0 30px', height: '121px', boxSizing: 'border-box', background: '#e8f1f5', borderTop: '1px solid #0c2340', borderBottom: '1px solid #0c2340', position: 'sticky', top: 0, zIndex: 50 }}>
         <div>
-          <h1>👥 Employees</h1>
+          <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#0c2340', margin: 0, lineHeight: '1.1', display: 'flex', alignItems: 'center' }}><img src="/icons/nav/users-dark.png" alt="" style={{ width: '30px', height: '30px', marginRight: '10px' }} />Employees</h1>
           <p className="text-muted">Manage staff members and monitor performance</p>
         </div>
-        <button className="btn-primary" onClick={() => setShowAddForm(true)}>
+        <button className="btn-primary" onClick={() => { setNewPassword(''); setShowAddForm(true) }}>
           + Add Employee
         </button>
       </div>
@@ -224,6 +244,14 @@ export default function Employees() {
                       >
                         Edit
                       </button>
+                      <button
+                        className="btn-primary"
+                        style={{ fontSize: '12px', padding: '6px 12px' }}
+                        onClick={() => setCredentialsEdit(emp)}
+                        title="Credentials"
+                      >
+                        Credentials
+                      </button>
                       <button 
                         className="btn-danger" 
                         style={{ fontSize: '12px', padding: '6px 12px' }} 
@@ -238,6 +266,16 @@ export default function Employees() {
               ))}
             </tbody>
           </table>
+          {credentialsEdit && (<CredentialsFormModal employee={credentialsEdit} token={token} onClose={() => setCredentialsEdit(null)} onSaved={(c) => { setCredentialsEdit(null); setCredentials(c); fetchEmployees() }} />)}
+          {credentials && (
+            <CredentialsModal
+              title={credentials.title}
+              employeeName={credentials.name}
+              code={credentials.code}
+              password={credentials.password}
+              onClose={() => setCredentials(null)}
+            />
+          )}
         </div>
       )}
     </div>
@@ -266,6 +304,7 @@ function EmployeeForm({ formData, setFormData, formErrors, onSubmit, submitting,
         <FormField label="Counter ID *" type="number" value={formData.counter_id} onChange={(e) => setFormData({...formData, counter_id: e.target.value})} error={formErrors.counter_id} />
         <FormField label="Email" type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} error={formErrors.email} />
         <FormField label="Phone" type="tel" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} />
+        {!showEditModal && <FormField label="Password (optional, blank = auto)" type="text" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} error={formErrors.password} />}
       </div>
       <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
         <button type="submit" className="btn-primary" disabled={submitting}>

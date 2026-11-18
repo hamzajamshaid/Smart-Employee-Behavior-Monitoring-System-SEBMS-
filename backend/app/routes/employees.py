@@ -8,6 +8,11 @@ import string
 
 employees_bp = Blueprint('employees', __name__)
 
+
+def _r1(v):
+    """Round to 1 dp, passing None through (gated or missing scores are not zero)."""
+    return None if v is None else round(v, 1)
+
 def _admin_only():
     """Refuse unless the token carries the Admin role (checked before any DB access)."""
     from flask_jwt_extended import get_jwt
@@ -68,7 +73,10 @@ def add_employee():
             while session.query(Employee).filter_by(employee_code=employee_code).first():
                 employee_code = generate_employee_code()
             
-            password = generate_password()
+            custom_pw = (data.get('password') or '').strip()
+            if custom_pw and len(custom_pw) < 6:
+                return jsonify({'error': 'Password must be at least 6 characters'}), 400
+            password = custom_pw or generate_password()
             
             employee = Employee(
                 name=name,
@@ -122,7 +130,7 @@ def get_employees():
             if not user or user.role != 'Admin':
                 return jsonify({'error': 'Only admins can view employees'}), 403
             
-            employees = session.query(Employee).all()
+            employees = session.query(Employee).filter(Employee.status != 'Deleted').all()
             
             employees_data = []
             for e in employees:
@@ -143,7 +151,7 @@ def get_employees():
                     'email': e.email,
                     'phone': e.phone,
                     'hire_date': e.hire_date.isoformat() if e.hire_date else None,
-                    'unified_score': round(latest_score.unified_score, 1) if latest_score else 0,
+                    'unified_score': _r1(latest_score.unified_score) if latest_score else 0,
                     'total_interactions': total_interactions
                 })
             
@@ -193,10 +201,10 @@ def get_employee_detail(employee_id):
             for s in scores:
                 trend.append({
                     'date': s.date.strftime('%Y-%m-%d') if s.date else None,
-                    'score': round(s.unified_score, 1)
+                    'score': _r1(s.unified_score)
                 })
             
-            latest_score = round(scores[-1].unified_score, 1) if scores else 0
+            latest_score = _r1(scores[-1].unified_score) if scores else 0
             
             return jsonify({
                 'id': employee.id,
@@ -302,7 +310,22 @@ def reset_employee_password(employee_id):
             if not employee:
                 return jsonify({'error': 'Employee not found'}), 404
             
-            new_password = generate_password()
+            body = request.get_json(silent=True) or {}
+            custom_pw = (body.get('password') or '').strip()
+            if custom_pw and len(custom_pw) < 6:
+                return jsonify({'error': 'Password must be at least 6 characters'}), 400
+            new_password = custom_pw or generate_password()
+            new_code = (body.get('employee_code') or '').strip()
+            if new_code and new_code != employee.employee_code:
+                taken = session.query(Employee).filter(Employee.employee_code == new_code, Employee.id != employee.id).first()
+                if taken:
+                    return jsonify({'error': 'Employee code already in use'}), 409
+                employee.employee_code = new_code
+            new_status = (body.get('status') or '').strip()
+            if new_status:
+                if new_status not in ('Active', 'Inactive', 'On Leave'):
+                    return jsonify({'error': 'Invalid status'}), 400
+                employee.status = new_status
             employee.password_hash = hash_pw(new_password)
             session.commit()
             
@@ -310,6 +333,8 @@ def reset_employee_password(employee_id):
                 'id': employee.id,
                 'name': employee.name,
                 'new_password': new_password,
+                'employee_code': employee.employee_code,
+                'status': employee.status,
                 'message': 'Password reset successfully!'
             }), 200
         
@@ -322,6 +347,34 @@ def reset_employee_password(employee_id):
 # ============================================================================
 # DELETE EMPLOYEE
 # ============================================================================
+
+@employees_bp.route('/employees/<int:employee_id>', methods=['PUT'])
+@jwt_required()
+def update_employee(employee_id):
+    denied = _admin_only()
+    if denied:
+        return denied
+    try:
+        data = request.get_json(silent=True) or {}
+        session = current_app.SessionLocal()
+        try:
+            from app.models import Employee
+            employee = session.query(Employee).filter_by(id=employee_id).first()
+            if not employee:
+                return jsonify({'error': 'Employee not found'}), 404
+            name = (data.get('name') or '').strip()
+            if not name:
+                return jsonify({'error': 'Name is required'}), 400
+            employee.name = name
+            employee.counter_id = int(data.get('counter_id') or employee.counter_id)
+            employee.email = (data.get('email') or '').strip() or None
+            employee.phone = (data.get('phone') or '').strip() or None
+            session.commit()
+            return jsonify({'id': employee.id, 'name': employee.name, 'message': 'Employee updated'}), 200
+        finally:
+            session.close()
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @employees_bp.route('/employees/<int:employee_id>', methods=['DELETE'])
 @jwt_required()
@@ -347,7 +400,7 @@ def delete_employee(employee_id):
             if not employee:
                 return jsonify({'error': 'Employee not found'}), 404
             
-            employee.status = 'Inactive'
+            employee.status = 'Deleted'
             session.commit()
             
             return jsonify({

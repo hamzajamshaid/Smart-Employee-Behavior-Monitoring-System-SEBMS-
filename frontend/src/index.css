@@ -17,10 +17,10 @@
 
 :root {
   /* PRIMARY COLORS - SEBMS Brand Identity */
-  --primary-dark: #321b1a;      /* Darkest blue - sidebar background */
-  --primary: #2E4057;           /* Main blue - buttons, borders, focus */
-  --primary-light: #4a6fa5;     /* Light blue - button gradients */
-  --primary-lighter: #f0f4f8;   /* Very light blue - light backgrounds */
+  --primary-dark: #0c2340;      /* Darkest blue - sidebar background */
+  --primary: #13315c;           /* Main blue - buttons, borders, focus */
+  --primary-light: #3d5a80;     /* Light blue - button gradients */
+  --primary-lighter: #e8f1f5;   /* Very light blue - light backgrounds */
   
   /* STATUS COLORS - For alerts, badges, indicators */
   --success: #10b981;           /* Green - success, completed */

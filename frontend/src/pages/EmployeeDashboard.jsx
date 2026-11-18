@@ -5,7 +5,7 @@ import API_BASE from '../config';
 import KPICard from '../components/KPICard';
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-const COLORS = { 'Ahmed Raza': '#0052cc', 'Sara Khan': '#00a86b', 'Bilal Ahmed': '#ff6b35' };
+const COLORS = { 'Ahmed Raza': '#0c2340', 'Sara Khan': '#00a86b', 'Bilal Ahmed': '#ff6b35' };
 const PERIODS = [
   { label: 'Today', value: 'today' },
   { label: 'This Week', value: 'week' },
@@ -13,7 +13,7 @@ const PERIODS = [
   { label: 'Custom', value: 'custom' }
 ];
 
-const btnStyle = (active) => ({ padding: '8px 16px', borderRadius: '6px', border: '1px solid #0052cc', background: active ? '#0052cc' : '#fff', color: active ? '#fff' : '#0052cc', cursor: 'pointer', fontSize: '13px', fontWeight: active ? '600' : '500', transition: 'all 0.15s linear' });
+const btnStyle = (active) => ({ padding: '8px 16px', borderRadius: '6px', border: '1px solid #0c2340', background: active ? '#0c2340' : '#fff', color: active ? '#fff' : '#0c2340', cursor: 'pointer', fontSize: '13px', fontWeight: active ? '600' : '500', transition: 'all 0.15s linear' });
 
 const cardStyle = { background: '#fff', borderRadius: '10px', padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', border: '1px solid #e8e8e8', transition: 'all 0.2s linear' };
 
@@ -25,7 +25,7 @@ const STATUS_STYLE = {
   detector_miss: ['#7c3aed', 'Detector miss'],
   failed: ['#e53935', 'Failed'],
   not_processed: ['#999', 'Not processed'],
-  in_progress: ['#0052cc', 'In progress'],
+  in_progress: ['#0c2340', 'In progress'],
   legacy: ['#999', 'Legacy'],
 };
 const statusBadge = s => {
@@ -54,7 +54,7 @@ const mapInteraction = r => ({
   emotion: r.emotion_score,
   voice: r.voice_score,
   response: r.response_seconds,
-  feedback: null,
+  feedback: r.feedback ?? null,
   status: r.processing_status,
 });
 
@@ -68,9 +68,9 @@ export default function EmployeeDashboard() {
   const [dateTo, setDateTo] = useState('');
   const [loading, setLoading] = useState(true);
 
-  const token = localStorage.getItem('token');
-  const employeeId = localStorage.getItem('employee_id');
-  const employeeName = localStorage.getItem('name') || 'Employee';
+  const token = sessionStorage.getItem('token');
+  const employeeId = sessionStorage.getItem('employee_id');
+  const employeeName = sessionStorage.getItem('name') || 'Employee';
   const headers = { Authorization: `Bearer ${token}` };
 
   const periodLabel = period === 'custom' ? `${dateFrom} to ${dateTo}` : PERIODS.find(p => p.value === period)?.label || 'This Month';
@@ -136,18 +136,18 @@ export default function EmployeeDashboard() {
       <style>{`
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .card-hover { transition: all 0.2s linear; }
-        .card-hover:hover { box-shadow: 0 8px 24px rgba(0,82,204,0.15); transform: translateY(-2px); }
+        .card-hover:hover { box-shadow: 0 8px 24px rgba(12,35,64,0.15); transform: translateY(-2px); }
       `}</style>
 
       {/* Sticky Header */}
-      <div style={{ position: 'sticky', top: 0, background: '#e8f0ff', borderBottom: '2px solid #0052cc', padding: '16px 30px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', zIndex: 50 }}>
+      <div style={{ position: 'sticky', top: 0, background: '#e8f1f5', borderTop: '1px solid #0c2340', borderBottom: '1px solid #0c2340', padding: '0 30px', height: '121px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', zIndex: 50 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '30px', marginBottom: '12px' }}>
           <div style={{ flex: 1 }}>
-            <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#0052cc', margin: 0, lineHeight: '1.1' }}>My Performance</h1>
+            <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#0c2340', margin: 0, lineHeight: '1.1' }}>My Performance</h1>
             <p style={{ fontSize: '13px', color: '#666', margin: '4px 0 0 0' }}>Welcome, {employeeName}</p>
           </div>
           <div style={{ textAlign: 'right' }}>
-            <p style={{ fontSize: '12px', color: '#333', fontWeight: '600' }}>Period: <span style={{ color: '#0052cc', fontWeight: '700' }}>{periodLabel}</span></p>
+            <p style={{ fontSize: '12px', color: '#333', fontWeight: '600' }}>Period: <span style={{ color: '#0c2340', fontWeight: '700' }}>{periodLabel}</span></p>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
@@ -159,14 +159,14 @@ export default function EmployeeDashboard() {
                 type="date" 
                 value={dateFrom} 
                 onChange={e => setDateFrom(e.target.value)} 
-                style={{ padding: '6px 10px', border: '1px solid #0052cc', borderRadius: '5px', fontSize: '12px', color: '#1a1a1a', background: '#fff' }} 
+                style={{ padding: '6px 10px', border: '1px solid #0c2340', borderRadius: '5px', fontSize: '12px', color: '#1a1a1a', background: '#fff' }} 
               />
               <span style={{ color: '#333', fontSize: '12px', fontWeight: '600' }}>to</span>
               <input 
                 type="date" 
                 value={dateTo} 
                 onChange={e => setDateTo(e.target.value)} 
-                style={{ padding: '6px 10px', border: '1px solid #0052cc', borderRadius: '5px', fontSize: '12px', color: '#1a1a1a', background: '#fff' }} 
+                style={{ padding: '6px 10px', border: '1px solid #0c2340', borderRadius: '5px', fontSize: '12px', color: '#1a1a1a', background: '#fff' }} 
               />
             </div>
           )}
@@ -190,7 +190,7 @@ export default function EmployeeDashboard() {
         {summary ? (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '12px' }}>
             <div className="card-hover" style={{ animation: 'fadeIn 0.3s ease-out' }}>
-              <KPICard label="Your Score" value={`${fmtNum(summary.unified_score)}`} sub="out of 100" color="#0052cc" />
+              <KPICard label="Your Score" value={`${fmtNum(summary.unified_score)}`} sub="out of 100" color="#0c2340" />
             </div>
             <div className="card-hover" style={{ animation: 'fadeIn 0.3s ease-out 0.05s both' }}>
               <KPICard label="Avg presence score" value={`${fmtNum(summary.presence_rate)}`} sub="average of measured presence scores" color="#00a86b" />
@@ -212,15 +212,15 @@ export default function EmployeeDashboard() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
           {/* Score Trend */}
           <div className="card-hover" style={cardStyle}>
-            <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#0052cc', marginBottom: '14px', marginTop: 0 }}>📈 Your Score Trend</h3>
+            <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#0c2340', marginBottom: '14px', marginTop: 0 }}>📈 Your Score Trend</h3>
             {trendData.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={trendData} margin={{ top: 5, right: 10, left: -15, bottom: 0 }}>
                   <XAxis dataKey="date" hide />
                   <YAxis domain={[50, 100]} fontSize={11} stroke="#ddd" />
-                  <Tooltip contentStyle={{ background: '#fff', border: '2px solid #0052cc', borderRadius: '6px', boxShadow: '0 2px 8px rgba(0,82,204,0.15)', padding: '8px 12px', fontSize: '12px' }} />
+                  <Tooltip contentStyle={{ background: '#fff', border: '2px solid #0c2340', borderRadius: '6px', boxShadow: '0 2px 8px rgba(12,35,64,0.15)', padding: '8px 12px', fontSize: '12px' }} />
                   <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '12px', color: '#333' }} />
-                  <Line type="linear" dataKey={employeeName} stroke="#0052cc" strokeWidth={2.5} dot={false} />
+                  <Line type="linear" dataKey={employeeName} stroke="#0c2340" strokeWidth={2.5} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             ) : (
@@ -230,14 +230,14 @@ export default function EmployeeDashboard() {
 
           {/* Recent Interactions */}
           <div className="card-hover" style={cardStyle}>
-            <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#0052cc', marginBottom: '6px', marginTop: 0 }}>📋 Recent Interactions</h3>
+            <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#0c2340', marginBottom: '6px', marginTop: 0 }}>📋 Recent Interactions</h3>
             <p style={{ fontSize: '12px', color: '#666', marginBottom: '12px' }}>Last {interactions.length} interactions</p>
             <div style={{ maxHeight: '345px', overflowY: 'auto', border: '1px solid #e8e8e8', borderRadius: '6px' }}>
               <table style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse' }}>
-                <thead style={{ position: 'sticky', top: 0, background: '#e8f0ff', zIndex: 10 }}>
-                  <tr style={{ borderBottom: '2px solid #0052cc' }}>
+                <thead style={{ position: 'sticky', top: 0, background: '#e8f1f5', zIndex: 10 }}>
+                  <tr style={{ borderBottom: '2px solid #0c2340' }}>
                     {['Time', 'Presence score', 'Expression (exp.)', 'Voice (exp.)', 'Response', 'Rating'].map(h => (
-                      <th key={h} style={{ textAlign: h === 'Time' ? 'left' : 'center', padding: '10px 8px', color: '#0052cc', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                      <th key={h} style={{ textAlign: h === 'Time' ? 'left' : 'center', padding: '10px 8px', color: '#0c2340', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
                         {h}
                       </th>
                     ))}
@@ -248,8 +248,8 @@ export default function EmployeeDashboard() {
                     interactions.map((i, idx) => (
                       <tr 
                         key={i.id} 
-                        style={{ borderBottom: '1px solid #e8f0ff', transition: 'background 0.15s linear', background: idx % 2 === 0 ? '#fafbfc' : '#fff' }} 
-                        onMouseEnter={e => e.currentTarget.style.background = '#e8f0ff'} 
+                        style={{ borderBottom: '1px solid #e8f1f5', transition: 'background 0.15s linear', background: idx % 2 === 0 ? '#fafbfc' : '#fff' }} 
+                        onMouseEnter={e => e.currentTarget.style.background = '#e8f1f5'} 
                         onMouseLeave={e => e.currentTarget.style.background = idx % 2 === 0 ? '#fafbfc' : '#fff'}
                       >
                         <td style={{ padding: '10px 8px', color: '#1a1a1a', fontWeight: '600' }}>{i.time || '—'}</td>
@@ -257,7 +257,7 @@ export default function EmployeeDashboard() {
                         <td style={{ padding: '10px 8px', textAlign: 'center', color: '#555', fontSize: '11px' }}>{fmtPct(i.emotion)}</td>
                         <td style={{ padding: '10px 8px', textAlign: 'center', color: voiceColor(i.voice), fontWeight: '600', fontSize: '11px' }}>{fmtPct(i.voice)}</td>
                         <td style={{ padding: '10px 8px', textAlign: 'center', color: '#555', fontSize: '11px' }}>{fmtSec(i.response)}</td>
-                        <td style={{ padding: '10px 8px', textAlign: 'center', color: '#555', fontSize: '11px' }}>{i.feedback ? `${i.feedback}★` : '—'}</td>
+                        <td onClick={() => i.feedback && window.alert('Rating: ' + i.feedback + ' star(s)\n\n' + (i.comment || 'No comment'))} style={{ padding: '10px 8px', textAlign: 'center', color: '#555', fontSize: '11px', cursor: i.feedback ? 'pointer' : 'default', textDecoration: i.feedback ? 'underline' : 'none' }}>{i.feedback ? `${i.feedback}★` : '—'}</td>
                       </tr>
                     ))
                   ) : (
@@ -273,7 +273,7 @@ export default function EmployeeDashboard() {
 
         {/* Score Components — FIXED */}
         <div className="card-hover" style={cardStyle}>
-          <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#0052cc', marginBottom: '18px', marginTop: 0 }}>📊 Score Components</h3>
+          <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#0c2340', marginBottom: '18px', marginTop: 0 }}>📊 Score Components</h3>
           {summary ? (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
               {[
@@ -286,7 +286,7 @@ export default function EmployeeDashboard() {
                 { 
                   label: 'Emotion', 
                   value: clampOrNull(summary.emotion_score), 
-                  color: '#0052cc',
+                  color: '#0c2340',
                   desc: 'Expression (experimental)'
                 },
                 { 

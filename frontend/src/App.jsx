@@ -1,13 +1,16 @@
+import CounterSession from './pages/CounterSession';
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 
 // Pages
 import Landing from './pages/Landing'
+import About from './pages/About'
 import Login from './pages/Login'
 import EmployeeLogin from './pages/EmployeeLogin'
 import CustomerLogin from './pages/CustomerLogin'
 import CustomerRegister from './pages/CustomerRegister'
 import CustomerFeedback from './pages/CustomerFeedback'
+import MeetingRoom from './pages/MeetingRoom'
 
 // Admin Pages
 import Dashboard from './pages/Dashboard'
@@ -24,15 +27,15 @@ import EmployeeDetail from './pages/EmployeeDetail'
 import EmployeeDashboard from './pages/EmployeeDashboard'
 import EmployeeTickets from './pages/EmployeeTickets'
 import EmployeeAppointments from './pages/EmployeeAppointments'
-import Attendance from './pages/Attendance'
 import EmployeeTicketDetail from './pages/EmployeeTicketDetail'
-import SimulationCapture from './pages/SimulationCapture'
+import AdminTicketDetail from './pages/AdminTicketDetail'
 
 // Customer Pages
 import CustomerDashboard from './pages/CustomerDashboard'
 import CustomerTickets from './pages/CustomerTickets'
 import Appointments from './pages/Appointments'
 import CustomerTicketDetail from './pages/CustomerTicketDetail'
+import CreateCustomerTicket from './pages/CreateCustomerTicket'
 
 // Components
 import Sidebar from './components/Sidebar'
@@ -44,7 +47,7 @@ function Loading() {
 
 // Main Layout Component
 function MainLayout() {
-  const userRole = localStorage.getItem('role')
+  const userRole = sessionStorage.getItem('role')
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f5f8fc' }}>
@@ -64,8 +67,8 @@ function MainLayout() {
 
 // Protected Route Component
 function ProtectedRoute({ children, requiredRole }) {
-  const token = localStorage.getItem('token')
-  const role = localStorage.getItem('role')
+  const token = sessionStorage.getItem('token')
+  const role = sessionStorage.getItem('role')
 
   if (!token) {
     return <Navigate to="/" replace />
@@ -94,12 +97,14 @@ export default function App() {
       <Routes>
         {/* ========== PUBLIC ROUTES (No Layout/Auth) ========== */}
         <Route path="/" element={<Landing />} />
+        <Route path="/about" element={<About />} />
         <Route path="/login" element={<Login />} />
         <Route path="/employee-login" element={<EmployeeLogin />} />
         <Route path="/customer-login" element={<CustomerLogin />} />
         <Route path="/customer-register" element={<CustomerRegister />} />
         {/* 🔓 FEEDBACK FORM — PUBLIC (No auth needed!) */}
         <Route path="/feedback/:interactionId" element={<CustomerFeedback />} />
+        <Route path="/meeting/:appointmentId" element={<ProtectedRoute><MeetingRoom /></ProtectedRoute>} />
 
         {/* ========== PROTECTED ROUTES WITH LAYOUT ========== */}
         <Route element={<MainLayout />}>
@@ -117,14 +122,15 @@ export default function App() {
           {/* EMPLOYEE ROUTES */}
           <Route path="/employee-dashboard" element={<ProtectedRoute requiredRole="Employee"><EmployeeDashboard /></ProtectedRoute>} />
           <Route path="/employee-tickets" element={<ProtectedRoute requiredRole="Employee"><EmployeeTickets /></ProtectedRoute>} />
+          <Route path="/tickets/:id" element={<ProtectedRoute requiredRole="Admin"><AdminTicketDetail /></ProtectedRoute>} />
           <Route path="/employee-tickets/:id" element={<ProtectedRoute requiredRole="Employee"><EmployeeTicketDetail /></ProtectedRoute>} />
           <Route path="/employee-appointments" element={<ProtectedRoute requiredRole="Employee"><EmployeeAppointments /></ProtectedRoute>} />
-          <Route path="/attendance" element={<ProtectedRoute requiredRole="Employee"><Attendance /></ProtectedRoute>} />
-          <Route path="/simulate" element={<ProtectedRoute requiredRole="Employee"><SimulationCapture /></ProtectedRoute>} />
+          <Route path="/counter" element={<ProtectedRoute requiredRole="Employee"><CounterSession /></ProtectedRoute>} />
 
           {/* CUSTOMER ROUTES */}
           <Route path="/customer-dashboard" element={<ProtectedRoute requiredRole="Customer"><CustomerDashboard /></ProtectedRoute>} />
           <Route path="/customer-tickets" element={<ProtectedRoute requiredRole="Customer"><CustomerTickets /></ProtectedRoute>} />
+          <Route path="/customer-tickets/new" element={<ProtectedRoute requiredRole="Customer"><CreateCustomerTicket /></ProtectedRoute>} />
           <Route path="/customer-tickets/:id" element={<ProtectedRoute requiredRole="Customer"><CustomerTicketDetail /></ProtectedRoute>} />
           <Route path="/appointments" element={<ProtectedRoute requiredRole="Customer"><Appointments /></ProtectedRoute>} />
         </Route>

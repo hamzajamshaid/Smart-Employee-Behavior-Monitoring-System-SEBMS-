@@ -45,3 +45,10 @@ venv-voice/
 __pycache__/
 *.pyc
 backend/celerybeat-schedule*
+
+backend/ml_data/
+backend/ml_models/
+venv-llm/
+logs/
+*.bak
+*.sql

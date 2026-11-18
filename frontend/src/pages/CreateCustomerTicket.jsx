@@ -14,7 +14,7 @@ export default function CreateCustomerTicket() {
   const [submitting, setSubmitting] = useState(false)
   const [errors, setErrors] = useState({})
 
-  const token = localStorage.getItem('token')
+  const token = sessionStorage.getItem('token')
   const headers = { Authorization: `Bearer ${token}` }
 
   const validateForm = () => {
@@ -50,7 +50,7 @@ export default function CreateCustomerTicket() {
     <div style={{ minHeight: '100vh', background: '#f5f8fc', padding: '30px' }}>
       <div style={{ maxWidth: '600px', margin: '0 auto' }}>
         <div style={{ marginBottom: '30px' }}>
-          <h1 style={{ fontSize: '28px', fontWeight: '800', color: '#0052cc', margin: 0 }}>🎫 Create New Ticket</h1>
+          <h1 style={{ fontSize: '28px', fontWeight: '800', color: '#0c2340', margin: 0 }}>🎫 Create New Ticket</h1>
           <p style={{ fontSize: '13px', color: '#666', margin: '8px 0 0 0' }}>Describe your issue in detail</p>
         </div>
 
@@ -122,7 +122,7 @@ export default function CreateCustomerTicket() {
               <button
                 type="submit"
                 disabled={submitting}
-                style={{ padding: '10px 20px', background: submitting ? '#999' : 'linear-gradient(135deg, #0052cc 0%, #003d99 100%)', color: '#fff', border: 'none', borderRadius: '6px', cursor: submitting ? 'not-allowed' : 'pointer', fontWeight: '600', fontSize: '13px', transition: 'all 0.15s' }}
+                style={{ padding: '10px 20px', background: submitting ? '#999' : 'linear-gradient(135deg, #0c2340 0%, #13315c 100%)', color: '#fff', border: 'none', borderRadius: '6px', cursor: submitting ? 'not-allowed' : 'pointer', fontWeight: '600', fontSize: '13px', transition: 'all 0.15s' }}
               >
                 {submitting ? 'Creating...' : 'Create Ticket'}
               </button>

@@ -8,7 +8,7 @@ if __name__ == '__main__':
     try:
         app = create_app()
         logger.info("🚀 Starting SEBMS Backend Server...")
-        app.run(debug=True, host='127.0.0.1', port=5000)
+        app.run(debug=True, use_reloader=False, host='127.0.0.1', port=5000)
     except Exception as e:
         logger.error(f"❌ Failed to start server: {str(e)}")
         raise

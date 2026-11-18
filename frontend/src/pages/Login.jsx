@@ -43,18 +43,18 @@ export default function Login() {
         throw new Error('No token in response');
       }
 
-      localStorage.setItem('token', token);
-      localStorage.setItem('role', res.data.role || role);
+      sessionStorage.setItem('token', token);
+      sessionStorage.setItem('role', res.data.role || role);
 
       // Store role-specific data
       if (role === 'Admin') {
-        localStorage.setItem('user', JSON.stringify({ name: res.data.username || username, role: 'Admin' }));
+        sessionStorage.setItem('user', JSON.stringify({ name: res.data.username || username, role: 'Admin' }));
       } else if (role === 'Employee') {
-        localStorage.setItem('employee_id', res.data.employee_id);
-        localStorage.setItem('name', res.data.name);
+        sessionStorage.setItem('employee_id', res.data.employee_id);
+        sessionStorage.setItem('name', res.data.name);
       } else if (role === 'Customer') {
-        localStorage.setItem('customer_id', res.data.customer_id);
-        localStorage.setItem('name', res.data.name);
+        sessionStorage.setItem('customer_id', res.data.customer_id);
+        sessionStorage.setItem('name', res.data.name);
       }
 
       // Redirect based on role
@@ -98,7 +98,7 @@ export default function Login() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #e8f0ff 0%, #dbeafe 100%)',
+      background: 'linear-gradient(135deg, #e8f1f5 0%, #dde8f0 100%)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -108,28 +108,55 @@ export default function Login() {
         background: '#fff',
         borderRadius: '12px',
         padding: '48px 40px',
-        boxShadow: '0 8px 32px rgba(0,82,204,0.15)',
+        boxShadow: '0 8px 32px rgba(12,35,64,0.15)',
         maxWidth: '450px',
         width: '100%',
         border: '1px solid #e8e8e8'
       }}>
         {/* Logo & Title */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <div style={{
-            width: '64px',
-            height: '64px',
-            borderRadius: '12px',
-            background: 'linear-gradient(135deg, #0052cc 0%, #003d99 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 16px',
-            boxShadow: '0 4px 12px rgba(0,82,204,0.2)'
-          }}>
-            <span style={{ fontSize: '32px', fontWeight: '800', color: '#fff' }}>S</span>
+          <style>{`
+            .login-shield-wrap {
+              width: 78px;
+              perspective: 400px;
+              flex-shrink: 0;
+            }
+            .login-shield-flip {
+              position: relative;
+              width: 100%;
+              transform-style: preserve-3d;
+              animation: sebms-shield-flip 12s linear infinite;
+            }
+            .login-shield-face {
+              display: block;
+              width: 100%;
+              height: auto;
+              backface-visibility: hidden;
+              -webkit-backface-visibility: hidden;
+            }
+            .login-shield-back {
+              position: absolute;
+              top: 0;
+              left: 0;
+              transform: rotateY(180deg);
+                          }
+            @keyframes sebms-shield-flip {
+              from { transform: rotateY(0deg); }
+              to   { transform: rotateY(360deg); }
+            }
+            @media (prefers-reduced-motion: reduce) {
+              .login-shield-flip { animation: none; }
+            }
+          `}</style>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px' }}>
+            <div className="login-shield-wrap">
+              <div className="login-shield-flip">
+                <img className="login-shield-face" src="/sebms-shield.png" alt="" />
+                <img className="login-shield-face login-shield-back" src="/sebms-shield.png" alt="" aria-hidden="true" />
+              </div>
+            </div>
+            <img src="/sebms-wordmark.png" alt="SEBMS" style={{ width: '240px', maxWidth: '100%', height: 'auto', display: 'block' }} />
           </div>
-          <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#0052cc', margin: '0 0 4px' }}>SEBMS</h1>
-          <p style={{ fontSize: '13px', color: '#666', margin: 0 }}>Smart Employee Behavior Monitoring</p>
         </div>
 
         {/* Form */}
@@ -155,7 +182,7 @@ export default function Login() {
                 boxSizing: 'border-box',
                 transition: 'all 0.15s'
               }}
-              onFocus={e => (e.currentTarget.style.borderColor = '#0052cc', e.currentTarget.style.background = '#fff')}
+              onFocus={e => (e.currentTarget.style.borderColor = '#2ec4b6', e.currentTarget.style.background = '#fff')}
               onBlur={e => (e.currentTarget.style.borderColor = '#e8e8e8', e.currentTarget.style.background = '#f9fafb')}
               required
             />
@@ -182,7 +209,7 @@ export default function Login() {
                 boxSizing: 'border-box',
                 transition: 'all 0.15s'
               }}
-              onFocus={e => (e.currentTarget.style.borderColor = '#0052cc', e.currentTarget.style.background = '#fff')}
+              onFocus={e => (e.currentTarget.style.borderColor = '#2ec4b6', e.currentTarget.style.background = '#fff')}
               onBlur={e => (e.currentTarget.style.borderColor = '#e8e8e8', e.currentTarget.style.background = '#f9fafb')}
               required
             />
@@ -209,8 +236,8 @@ export default function Login() {
                   }}
                   style={{
                     padding: '10px 12px',
-                    border: `2px solid ${role === item.role ? '#0052cc' : '#e8e8e8'}`,
-                    background: role === item.role ? '#0052cc' : '#fff',
+                    border: `2px solid ${role === item.role ? '#0c2340' : '#e8e8e8'}`,
+                    background: role === item.role ? '#0c2340' : '#fff',
                     color: role === item.role ? '#fff' : '#333',
                     borderRadius: '6px',
                     cursor: 'pointer',
@@ -218,7 +245,7 @@ export default function Login() {
                     fontWeight: role === item.role ? '700' : '600',
                     transition: 'all 0.15s'
                   }}
-                  onMouseEnter={e => role !== item.role && (e.currentTarget.style.borderColor = '#0052cc', e.currentTarget.style.background = '#e8f0ff')}
+                  onMouseEnter={e => role !== item.role && (e.currentTarget.style.borderColor = '#2ec4b6', e.currentTarget.style.background = '#e8f1f5')}
                   onMouseLeave={e => role !== item.role && (e.currentTarget.style.borderColor = '#e8e8e8', e.currentTarget.style.background = '#fff')}
                 >
                   {item.role}
@@ -251,7 +278,7 @@ export default function Login() {
             disabled={loading || !username || !password}
             style={{
               padding: '12px 16px',
-              background: loading || !username || !password ? '#d1d5db' : 'linear-gradient(135deg, #0052cc 0%, #003d99 100%)',
+              background: loading || !username || !password ? '#d1d5db' : 'linear-gradient(135deg, #0c2340 0%, #13315c 100%)',
               color: '#fff',
               border: 'none',
               borderRadius: '8px',
@@ -265,31 +292,26 @@ export default function Login() {
               gap: '8px',
               marginTop: '8px'
             }}
-            onMouseEnter={e => !loading && username && password && (e.currentTarget.style.transform = 'translateY(-2px)', e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,82,204,0.3)')}
+            onMouseEnter={e => !loading && username && password && (e.currentTarget.style.transform = 'translateY(-2px)', e.currentTarget.style.boxShadow = '0 8px 20px rgba(12,35,64,0.3)')}
             onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)', e.currentTarget.style.boxShadow = 'none')}
           >
-            <span>🔐</span>
             {loading ? 'Signing In...' : 'Sign In'}
           </button>
         </form>
 
-        {/* Demo Credentials */}
-        <div style={{
-          marginTop: '24px',
-          padding: '14px',
-          background: '#e8f0ff',
-          borderRadius: '8px',
-          border: '1px solid #d0e0ff',
-          fontSize: '12px',
-          color: '#0052cc'
-        }}>
-          <p style={{ margin: '0 0 8px 0', fontWeight: '700' }}>Demo usernames (ask your administrator for passwords):</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <div>👤 <strong>Admin:</strong> <code style={{ background: '#fff', padding: '1px 4px', borderRadius: '3px', fontFamily: 'monospace' }}>admin</code></div>
-            <div>👨‍💼 <strong>Employee:</strong> <code style={{ background: '#fff', padding: '1px 4px', borderRadius: '3px', fontFamily: 'monospace' }}>EMP001</code></div>
-            <div>👤 <strong>Customer:</strong> <code style={{ background: '#fff', padding: '1px 4px', borderRadius: '3px', fontFamily: 'monospace' }}>03001234567</code></div>
-          </div>
-        </div>
+        {role === 'Customer' && (
+          <p style={{ textAlign: 'center', marginTop: '16px', fontSize: '13px', color: '#3d5a80' }}>
+            New customer?{' '}
+            <button
+              type="button"
+              onClick={() => navigate('/customer-register')}
+              style={{ background: 'none', border: 'none', color: '#13315c', fontWeight: '700', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
+            >
+              Create an account
+            </button>
+          </p>
+        )}
+
       </div>
     </div>
   );

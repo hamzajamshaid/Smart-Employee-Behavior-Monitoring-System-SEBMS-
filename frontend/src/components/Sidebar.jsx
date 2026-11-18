@@ -7,40 +7,39 @@ export default function Sidebar({ userRole }) {
   const [isOpen, setIsOpen] = useState(true)
 
   const handleLogout = () => {
-    localStorage.removeItem('token')
-    localStorage.removeItem('role')
-    localStorage.removeItem('username')
-    localStorage.removeItem('employee_id')
-    localStorage.removeItem('customer_id')
-    localStorage.removeItem('name')
+    sessionStorage.removeItem('token')
+    sessionStorage.removeItem('role')
+    sessionStorage.removeItem('username')
+    sessionStorage.removeItem('employee_id')
+    sessionStorage.removeItem('customer_id')
+    sessionStorage.removeItem('name')
     navigate('/')
   }
 
   const isActive = (path) => location.pathname === path
 
   const adminMenuItems = [
-    { path: '/dashboard', label: 'Dashboard', icon: '📊' },
-    { path: '/employees', label: 'Employees', icon: '👥' },
-    { path: '/tickets', label: 'Tickets', icon: '🎫' },
-    { path: '/admin-appointments', label: 'Appointments', icon: '📅' },
-    { path: '/alerts', label: 'Alerts', icon: '🚨' },
-    { path: '/reports', label: 'Reports', icon: '📈' },
-    { path: '/feedback', label: 'Feedback', icon: '💬' },
-    { path: '/settings', label: 'Settings', icon: '⚙️' },
+    { path: '/dashboard', label: 'Dashboard', icon: '/icons/nav/layout-dashboard-light.png' },
+    { path: '/employees', label: 'Employees', icon: '/icons/nav/users-light.png' },
+    { path: '/tickets', label: 'Tickets', icon: '/icons/nav/ticket-light.png' },
+    { path: '/admin-appointments', label: 'Appointments', icon: '/icons/nav/calendar-days-light.png' },
+    { path: '/alerts', label: 'Alerts', icon: '/icons/nav/bell-light.png' },
+    { path: '/reports', label: 'Reports', icon: '/icons/nav/trending-up-light.png' },
+    { path: '/feedback', label: 'Feedback', icon: '/icons/nav/message-square-light.png' },
+    { path: '/settings', label: 'Settings', icon: '/icons/nav/settings-light.png' },
   ]
 
   const employeeMenuItems = [
-    { path: '/employee-dashboard', label: 'Dashboard', icon: '📊' },
-    { path: '/employee-appointments', label: 'Appointments', icon: '📅' },
-    { path: '/employee-tickets', label: 'My Tickets', icon: '🎫' },
-    { path: '/attendance', label: 'Attendance', icon: '⏱️' },
-    { path: '/simulate', label: 'Simulate Capture', icon: '🎬' },
+    { path: '/employee-dashboard', label: 'Dashboard', icon: '/icons/nav/layout-dashboard-light.png' },
+    { path: '/employee-appointments', label: 'Appointments', icon: '/icons/nav/calendar-days-light.png' },
+    { path: '/employee-tickets', label: 'My Tickets', icon: '/icons/nav/ticket-light.png' },
+    { path: '/counter', label: 'Counter', icon: '/icons/nav/counter-light.png' },
   ]
 
   const customerMenuItems = [
-    { path: '/customer-dashboard', label: 'Dashboard', icon: '🏠' },
-    { path: '/appointments', label: 'Book Appointment', icon: '📅' },
-    { path: '/customer-tickets', label: 'My Tickets', icon: '🎫' },
+    { path: '/customer-dashboard', label: 'Dashboard', icon: '/icons/nav/layout-dashboard-light.png' },
+    { path: '/appointments', label: 'Book Appointment', icon: '/icons/nav/calendar-days-light.png' },
+    { path: '/customer-tickets', label: 'My Tickets', icon: '/icons/nav/ticket-light.png' },
   ]
 
   const menuItems = 
@@ -57,7 +56,7 @@ export default function Sidebar({ userRole }) {
           top: 0;
           height: 100vh;
           width: ${isOpen ? '250px' : '80px'};
-          background: linear-gradient(135deg, #1e3a5f 0%, #2c5aa0 100%);
+          background: linear-gradient(135deg, #0c2340 0%, #13315c 100%);
           color: #fff;
           display: flex;
           flex-direction: column;
@@ -187,14 +186,14 @@ export default function Sidebar({ userRole }) {
         }
 
         .sidebar-nav-item.active {
-          background: rgba(0, 82, 204, 0.25);
+          background: rgba(46, 196, 182, 0.2);
           color: #fff;
-          border-left: 3px solid #0052cc;
+          border-left: 3px solid #2ec4b6;
           padding-left: 11px;
         }
 
         .sidebar-nav-item.active:hover {
-          background: rgba(0, 82, 204, 0.35);
+          background: rgba(46, 196, 182, 0.3);
         }
 
         .sidebar-icon {
@@ -261,9 +260,15 @@ export default function Sidebar({ userRole }) {
         {/* Header */}
         <div className="sidebar-header">
           <div className="sidebar-branding">
-            <div className="sidebar-logo-icon">⚙️</div>
-            <h2 className="sidebar-brand">SEBMS</h2>
-          </div>
+            <svg width="60" height="72" viewBox="0 0 100 120" style={{ flexShrink: 0, display: 'block' }} aria-hidden="true">
+              <path d="M50 4 L94 18 L94 58 C94 88 74 107 50 116 C26 107 6 88 6 58 L6 18 Z" fill="#2ec4b6" />
+              <path d="M50 12 L86 23 L86 58 C86 82 70 98 50 106 C30 98 14 82 14 58 L14 23 Z" fill="#0c2340" />
+              <path d="M26 62 A24 24 0 0 1 74 62" fill="none" stroke="#2ec4b6" strokeWidth="7" strokeLinecap="round" />
+              <circle cx="67" cy="45" r="4" fill="#fff" />
+              <circle cx="50" cy="62" r="3" fill="#fff" />
+            </svg>
+            <h2 className="sidebar-brand" style={{ fontSize: '28px' }}>SEBMS</h2>
+                      </div>
           <button
             onClick={() => setIsOpen(!isOpen)}
             className="sidebar-toggle"
@@ -282,7 +287,7 @@ export default function Sidebar({ userRole }) {
               className={`sidebar-nav-item ${isActive(item.path) ? 'active' : ''}`}
               title={item.label}
             >
-              <span className="sidebar-icon">{item.icon}</span>
+              <span className="sidebar-icon">{item.icon.startsWith('/') ? <img src={item.icon} alt="" style={{ width: '22px', height: '22px', display: 'block' }} /> : item.icon}</span>
               <span className="sidebar-label">{item.label}</span>
             </button>
           ))}
@@ -295,7 +300,7 @@ export default function Sidebar({ userRole }) {
             className="sidebar-logout-btn"
             title="Logout"
           >
-            <span className="sidebar-logout-icon">🚪</span>
+            <img src="/icons/nav/log-out-light.png" alt="" style={{ width: '22px', height: '22px', display: 'block' }} />
             <span className="sidebar-logout-label">Logout</span>
           </button>
         </div>

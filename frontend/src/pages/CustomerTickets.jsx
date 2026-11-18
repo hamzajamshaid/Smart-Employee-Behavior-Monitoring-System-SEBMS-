@@ -10,8 +10,8 @@ export default function CustomerTickets() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
-  const token = localStorage.getItem('token');
-  const customerId = localStorage.getItem('customer_id');
+  const token = sessionStorage.getItem('token');
+  const customerId = sessionStorage.getItem('customer_id');
   const headers = { Authorization: `Bearer ${token}` };
 
   useEffect(() => {
@@ -50,16 +50,15 @@ export default function CustomerTickets() {
   return (
     <div style={{ minHeight: '100vh', background: '#f5f8fc' }}>
       {/* Sticky Header */}
-      <div style={{ position: 'sticky', top: 0, background: '#e8f0ff', borderBottom: '2px solid #0052cc', padding: '16px 30px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', zIndex: 50 }}>
+      <div style={{ position: 'sticky', top: 0, background: '#e8f1f5', borderTop: '1px solid #0c2340', borderBottom: '1px solid #0c2340', padding: '0 30px', height: '121px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', zIndex: 50 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '30px', marginBottom: '12px' }}>
           <div>
-            <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#0052cc', margin: 0, lineHeight: '1.1' }}>🎫 My Support Tickets</h1>
-            <p style={{ fontSize: '13px', color: '#666', margin: '4px 0 0 0' }}>Total: {tickets.length}</p>
+            <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#0c2340', margin: 0, lineHeight: '1.1' }}><img src="/icons/nav/ticket-dark.png" alt="" style={{ width: '30px', height: '30px', verticalAlign: 'middle', marginRight: '10px' }} />My Support Tickets</h1>
           </div>
           <button
             onClick={() => navigate('/customer-tickets/new')}
-            style={{ padding: '10px 20px', background: 'linear-gradient(135deg, #0052cc 0%, #003d99 100%)', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.15s' }}
-            onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-2px)', e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,82,204,0.2)')}
+            style={{ padding: '10px 20px', background: 'linear-gradient(135deg, #0c2340 0%, #13315c 100%)', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.15s' }}
+            onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-2px)', e.currentTarget.style.boxShadow = '0 4px 12px rgba(12,35,64,0.2)')}
             onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)', e.currentTarget.style.boxShadow = 'none')}
           >
             <Plus size={16} />
@@ -72,9 +71,9 @@ export default function CustomerTickets() {
             placeholder="Search tickets..." 
             value={searchQuery} 
             onChange={e => setSearchQuery(e.target.value)} 
-            style={{ width: '100%', padding: '10px 12px 10px 36px', border: '1px solid #0052cc', borderRadius: '6px', fontSize: '13px', boxShadow: '0 1px 3px rgba(0,82,204,0.1)', background: '#fff', color: '#1a1a1a' }}
+            style={{ width: '100%', padding: '10px 12px 10px 36px', border: '1px solid #0c2340', borderRadius: '6px', fontSize: '13px', boxShadow: '0 1px 3px rgba(12,35,64,0.1)', background: '#fff', color: '#1a1a1a' }}
           />
-          <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#0052cc' }} />
+          <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#0c2340' }} />
         </div>
       </div>
 
@@ -88,9 +87,9 @@ export default function CustomerTickets() {
               onClick={() => setFilterStatus(status)}
               style={{
                 padding: '8px 16px',
-                background: filterStatus === status ? '#0052cc' : '#fff',
-                color: filterStatus === status ? '#fff' : '#0052cc',
-                border: `1px solid ${filterStatus === status ? '#0052cc' : '#e8e8e8'}`,
+                background: filterStatus === status ? '#0c2340' : '#fff',
+                color: filterStatus === status ? '#fff' : '#0c2340',
+                border: `1px solid ${filterStatus === status ? '#0c2340' : '#e8e8e8'}`,
                 borderRadius: '6px',
                 cursor: 'pointer',
                 fontSize: '12px',
@@ -130,7 +129,7 @@ export default function CustomerTickets() {
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
                     <div style={{ flex: 1 }}>
-                      <h4 style={{ fontSize: '14px', fontWeight: '700', color: '#0052cc', margin: 0 }}>#{ticket.id} - {ticket.title}</h4>
+                      <h4 style={{ fontSize: '14px', fontWeight: '700', color: '#0c2340', margin: 0 }}>#{ticket.id} - {ticket.title}</h4>
                       <p style={{ fontSize: '12px', color: '#666', margin: '4px 0 0 0' }}>Created: {new Date(ticket.created_at).toLocaleDateString()}</p>
                     </div>
                     <span style={{ padding: '4px 12px', background: statusColor(ticket.status) + '20', color: statusColor(ticket.status), borderRadius: '4px', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase' }}>
