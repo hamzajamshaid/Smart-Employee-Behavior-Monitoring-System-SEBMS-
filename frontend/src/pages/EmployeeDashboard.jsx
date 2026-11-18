@@ -271,61 +271,6 @@ export default function EmployeeDashboard() {
           </div>
         </div>
 
-        {/* Score Components — FIXED */}
-        <div className="card-hover" style={cardStyle}>
-          <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#0c2340', marginBottom: '18px', marginTop: 0 }}>📊 Score Components</h3>
-          {summary ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
-              {[
-                { 
-                  label: 'Presence', 
-                  value: clampOrNull(summary.presence_rate), 
-                  color: '#00a86b',
-                  desc: 'Face detection at counter'
-                },
-                { 
-                  label: 'Emotion', 
-                  value: clampOrNull(summary.emotion_score), 
-                  color: '#0c2340',
-                  desc: 'Expression (experimental)'
-                },
-                { 
-                  label: 'Response', 
-                  value: clampOrNull(summary.avg_response == null ? null : 100 - (summary.avg_response / 15) * 100), 
-                  color: '#ff9500',
-                  desc: 'Speed (≤15s = 100%)'
-                },
-                { 
-                  label: 'Feedback', 
-                  value: clampOrNull(summary.feedback == null ? null : (summary.feedback / 5) * 100), 
-                  color: '#9333ea',
-                  desc: 'Customer rating'
-                },
-                { 
-                  label: 'Voice', 
-                  value: clampOrNull(summary.voice_score), 
-                  color: '#e53935',
-                  desc: 'Speech presence (experimental)'
-                }
-              ].map(s => (
-                <div key={s.label}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '13px', color: '#333', fontWeight: '600' }}>{s.label}</span>
-                    <span style={{ fontSize: '13px', fontWeight: '700', color: s.color }}>{s.value == null ? '—' : `${Math.round(s.value)}%`}</span>
-                  </div>
-                  <div style={{ width: '100%', background: '#f0f0f0', borderRadius: '6px', height: '10px', overflow: 'hidden', marginBottom: '6px' }}>
-                    <div style={{ width: `${s.value ?? 0}%`, background: `linear-gradient(90deg, ${s.color}, ${s.color}dd)`, height: '10px', borderRadius: '6px', transition: 'width 0.5s ease-out' }} />
-                  </div>
-                  <p style={{ fontSize: '10px', color: '#999', margin: '0', fontWeight: '500' }}>{s.desc}</p>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100px', color: '#999' }}>
-              Loading...
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );
